@@ -51,4 +51,4 @@
 ```javascript
 console.log("Hello World");
 ```
-![これ押すとpngがでる](./test1.png)
+![テスト画像](./test1.png)
