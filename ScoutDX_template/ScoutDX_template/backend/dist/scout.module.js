@@ -14,13 +14,13 @@ const scout_controller_1 = require("./controller/scout.controller");
 const scout_repository_1 = require("./repository/scout.repository");
 const ai_generate_service_1 = require("./service/ai-generate.service");
 const scout_service_1 = require("./service/scout.service");
-const scout_entity_1 = require("./type/scout.entity");
+const scout_1 = require("./type/scout");
 let ScoutModule = class ScoutModule {
 };
 exports.ScoutModule = ScoutModule;
 exports.ScoutModule = ScoutModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([scout_entity_1.ScoutEntity])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([scout_1.ScoutEntity])],
         controllers: [scout_controller_1.ScoutController, ai_generate_controller_1.AiGenerateController],
         providers: [scout_service_1.ScoutService, scout_repository_1.ScoutRepository, ai_generate_service_1.AiGenerateService],
     })

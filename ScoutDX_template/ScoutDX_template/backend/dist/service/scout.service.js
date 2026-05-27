@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ScoutService = void 0;
 const common_1 = require("@nestjs/common");
 const scout_repository_1 = require("../repository/scout.repository");
-const scout_entity_1 = require("../type/scout.entity");
+const scout_1 = require("../type/scout");
 let ScoutService = class ScoutService {
     constructor(scoutRepository) {
         this.scoutRepository = scoutRepository;
@@ -20,16 +20,16 @@ let ScoutService = class ScoutService {
     findAll() {
         return this.scoutRepository.findAll();
     }
-    async create(dto) {
-        if (!dto.creator?.trim() || !dto.title?.trim() || !dto.body?.trim()) {
+    async create(input) {
+        if (!input.creator?.trim() || !input.title?.trim() || !input.body?.trim()) {
             throw new common_1.BadRequestException('作成者・タイトル・本文は必須です');
         }
-        const scout = new scout_entity_1.ScoutEntity();
+        const scout = new scout_1.ScoutEntity();
         scout.id = this.generateId();
-        scout.creator = dto.creator.trim();
-        scout.title = dto.title.trim();
-        scout.body = dto.body.trim();
-        scout.status = dto.status?.trim() || 'DRAFT';
+        scout.creator = input.creator.trim();
+        scout.title = input.title.trim();
+        scout.body = input.body.trim();
+        scout.status = input.status?.trim() || 'DRAFT';
         return this.scoutRepository.save(scout);
     }
     generateId() {
