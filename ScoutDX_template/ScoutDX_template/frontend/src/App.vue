@@ -1,15 +1,20 @@
 <template>
-  <loginView />
-  <userRegisterView />
-  <roleTuggleView />
-  <scoutListView />
-  <RouterView />
+  <!-- <router-view v-slot="{ Component }">
+    <!-- <transition name="fade" mode="out-in"> -->
+      <!-- <component :is="Component" /> -->
+    <!-- </transition> -->
+
+    <userRegisterView >
+
+  <!-- </router-view> --> -->
 </template>
 
 <script setup>
-import loginView from './views/loginView.vue';
-import userRegisterView from './views/userRegisterView.vue';
-import roleTuggleView from './views/roleTuggleView.vue';
-import scoutListView from './views/scoutListView.vue';
 
+import userRegisterView from './views/auth/userRegisterView.vue';
+// アプリケーションのルートコンポーネント
 </script>
+
+<style>
+/* グローバルスタイルはmain.cssで定義 */
+</style>
