@@ -3,7 +3,8 @@
     <!-- ヘッダー -->
     <header class="header">
       <h1 class="app-title">スカウト文作成・承認管理アプリ</h1>
-    <button class="logout-btn" @click="handleLogout">ログアウト</button>    </header>
+      <button class="logout-btn" @click="handleLogout">ログアウト</button>
+    </header>
 
     <!-- メインコンテンツ -->
     <main class="main-content">
@@ -44,16 +45,28 @@ export default {
     selectRole(role) {
       console.log(`選択されたロール: ${role}`);
       
+      // ロールをlocalStorageに保存（後で使う場合）
+      localStorage.setItem('userRole', role);
+      
       // ロールに応じた画面遷移処理
       switch(role) {
         case 'author':
-          this.$router.push('/author/dashboard');
+          // 作成者 → ScoutMessageList（スカウト文一覧）
+          this.$router.push('/scout-messages');
           break;
         case 'leader':
-          this.$router.push('/leader/dashboard');
+          // 営業リーダー → ScoutApprovalList（承認管理）
+          this.$router.push({ 
+            path: '/approval',
+            query: { role: 'sales_leader' }
+          });
           break;
         case 'admin':
-          this.$router.push('/admin/dashboard');
+          // 管理者 → ScoutApprovalList（承認管理）
+          this.$router.push({ 
+            path: '/approval',
+            query: { role: 'admin' }
+          });
           break;
         default:
           console.error('不正なロールが選択されました');
@@ -61,22 +74,23 @@ export default {
     },
 
     handleLogout() {
-  // ① 確認ダイアログ表示
-        const confirmLogout = confirm('ログアウトしますか？');
-  
-        if (!confirmLogout) {
-          return; // キャンセルされたら何もしない
-        }
+      // ① 確認ダイアログ表示
+      const confirmLogout = confirm('ログアウトしますか？');
+      
+      if (!confirmLogout) {
+        return; // キャンセルされたら何もしない
+      }
 
-         // ② ログイン情報を削除
-         localStorage.removeItem('authToken');
-        localStorage.removeItem('userData');
-  
-         // ③ ログイン画面に戻る
-         this.$router.push('/login');
-  
-         // ④ メッセージ表示
-         alert('ログアウトしました');
+      // ② ログイン情報を削除
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
+      localStorage.removeItem('userRole');
+      
+      // ③ ログイン画面に戻る（ログイン画面がない場合はトップページ）
+      this.$router.push('/');
+      
+      // ④ メッセージ表示
+      alert('ログアウトしました');
     }
   }
 }
