@@ -1,6 +1,6 @@
 <template>
   <RouterView />
-  <h1>AAA</h1>
+  <h1>AABBBBA</h1>
 </template>
 
 <script setup>
