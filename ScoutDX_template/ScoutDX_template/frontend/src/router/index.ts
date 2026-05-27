@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
-import ScoutMessageList from "../views/scoutListView.vue";
+import ScoutMessageList from "../views/ScoutListView.vue";
 import RoleToggleView from "../views/RoleToggleView.vue";
 import ScoutApprovalList from "../views/ScoutApprovalList.vue";
 
