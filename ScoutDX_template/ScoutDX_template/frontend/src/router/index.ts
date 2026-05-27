@@ -1,5 +1,8 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
+import ScoutPage from "../components/ScoutPage.vue";
+import ScoutMessageList from "../views/scoutListView.vue";
+import RoleToggleView from "../views/RoleToggleView.vue";
+import ScoutApprovalList from "../views/ScoutApprovalList.vue";
 
 // Auth Views
 import LoginView from '@/views/auth/LoginView.vue'
@@ -18,6 +21,7 @@ import ApprovalDetailView from '@/views/leader/ApprovalDetailView.vue'
 
 const routes = [
   {
+<<<<<<< HEAD
     path: '/',
     redirect: '/login'
   },
@@ -96,3 +100,25 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
+=======
+    path: "/",
+    name: "RoleSelection",
+    component: RoleToggleView,  // ← トップページ（/）でロール選択画面を表示
+  },
+  {
+    path: "/scout-messages",
+    name: "ScoutMessageList",
+    component: ScoutMessageList,
+  },
+  {
+    path: "/approval",
+    name: "ScoutApprovalList",
+    component: ScoutApprovalList,
+  },
+];
+
+export const router = createRouter({
+  history: createWebHistory(),
+  routes,
+});
+>>>>>>> 7f9940ea1c042e7e37c50ccb0447a558b6463666
