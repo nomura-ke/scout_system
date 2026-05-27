@@ -16,7 +16,7 @@ exports.ScoutRepository = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const scout_entity_1 = require("../type/scout.entity");
+const scout_1 = require("../type/scout");
 let ScoutRepository = class ScoutRepository {
     constructor(repository) {
         this.repository = repository;
@@ -35,7 +35,7 @@ let ScoutRepository = class ScoutRepository {
 exports.ScoutRepository = ScoutRepository;
 exports.ScoutRepository = ScoutRepository = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(scout_entity_1.ScoutEntity)),
+    __param(0, (0, typeorm_1.InjectRepository)(scout_1.ScoutEntity)),
     __metadata("design:paramtypes", [typeorm_2.Repository])
 ], ScoutRepository);
 //# sourceMappingURL=scout.repository.js.map
