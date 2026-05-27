@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { ScoutEntity } from '../type/scout.entity';
+import { ScoutEntity } from '../type/scout';
 export declare class ScoutRepository {
     private readonly repository;
     constructor(repository: Repository<ScoutEntity>);
