@@ -41,4 +41,4 @@ __decorate([
 exports.ScoutEntity = ScoutEntity = __decorate([
     (0, typeorm_1.Entity)('scouts')
 ], ScoutEntity);
-//# sourceMappingURL=scout.entity.js.map
+//# sourceMappingURL=scout.js.map
