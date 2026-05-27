@@ -1,11 +1,14 @@
 <template>
-  <loginView />
-  
+  <roleTuggleView />
+  <scoutListView />
   <RouterView />
 </template>
 
 <script setup>
-import loginView from './views/loginView.vue';
+
+import roleTuggleView from './views/roleTuggleView.vue';
+import scoutListView from './views/scoutListView.vue';
+
 
 
 </script>
