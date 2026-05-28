@@ -1,5 +1,3 @@
-LoginView.vue
-
 <template>
   <div class="login-container">
     <AppFooter />
@@ -25,7 +23,9 @@ LoginView.vue
               class="form-input"
             />
           </div>
-          <button type="submit" class="btn-primary">ログイン</button>
+          <button type="submit" class="btn-primary" @click.prevent="handleLogin">
+            ログイン
+          </button>
         </form>
       </div>
     </div>
@@ -35,8 +35,8 @@ LoginView.vue
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
-import AppFooter from '@/components/AppFooter.vue'
+import { useAuthStore } from '../stores/mockAuthStore'
+import AppFooter from '../components/AppFooter.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -45,13 +45,22 @@ const employeeId = ref('')
 const password = ref('')
 
 const handleLogin = async () => {
+  console.log('🔐 ログインボタンがクリックされました')
+  console.log('社員番号:', employeeId.value)
+  console.log('パスワード:', password.value)
+  
   try {
     await authStore.login(employeeId.value, password.value)
+    console.log('✅ ログイン成功')
     router.push('/role-select')
   } catch (error) {
+    console.error('❌ ログイン失敗:', error)
     alert('ログインに失敗しました')
   }
 }
+
+// マウント時の確認
+console.log('LoginView がマウントされました')
 </script>
 
 <style scoped>
@@ -119,5 +128,9 @@ const handleLogin = async () => {
 
 .btn-primary:hover {
   background-color: #0052a3;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
 }
 </style>

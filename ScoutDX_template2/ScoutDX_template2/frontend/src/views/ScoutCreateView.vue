@@ -1,4 +1,3 @@
-ScoutCreateView.vue
 
 <template>
   <div class="scout-create-container">
@@ -76,9 +75,9 @@ ScoutCreateView.vue
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useScoutStore } from '@/stores/scoutStore'
-import AppHeader from '@/components/AppHeader.vue'
-import AppFooter from '@/components/AppFooter.vue'
+import { useScoutStore } from '../stores/mockScoutStore' 
+import AppHeader from '../components/AppHeader.vue'      
+import AppFooter from '../components/AppFooter.vue'
 
 const router = useRouter()
 const scoutStore = useScoutStore()

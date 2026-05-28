@@ -1,9 +1,6 @@
-RoleSelectView.vue
-
-
 <template>
   <div class="role-select-container">
-    <AppHeader show-logout />
+    <AppHeader :show-logout="true" />  <!-- ⚠️ 修正1: ケバブケースに -->
     <div class="role-content">
       <h1 class="role-title">ロール選択</h1>
       <div class="role-cards">
@@ -24,9 +21,9 @@ RoleSelectView.vue
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
-import AppHeader from '@/components/AppHeader.vue'
-import AppFooter from '@/components/AppFooter.vue'
+import { useAuthStore } from '../stores/mockAuthStore'  // ⚠️ 修正2: モックを使用（並行作業のため）
+import AppHeader from '../components/AppHeader.vue'  // ⚠️ 修正2: 相対パスに
+import AppFooter from '../components/AppFooter.vue'  // ⚠️ 修正2: 相対パスに
 
 const router = useRouter()
 const authStore = useAuthStore()

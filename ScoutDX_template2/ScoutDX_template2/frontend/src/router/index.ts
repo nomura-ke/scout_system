@@ -1,54 +1,41 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import LeaderApprovalView from '../views/LeaderApprovalView.vue'
-import LeaderListView from '../views/LeaderListView.vue'
-import LoginView from '../views/LoginView.vue'
-import RoleSelectView from '../views/RoleSelectView.vue'
-import ScoutCreateView from '../views/ScoutCreateView.vue'
-import ScoutDetailView from '../views/ScoutDetailView.vue'
-import ScoutListView from '../views/ScoutListView.vue'
+import { createRouter, createWebHistory } from 'vue-router'
 
-const routes: RouteRecordRaw[] = [
-  { path: '/', redirect: '/login' },
-  {
-    path: '/login',
-    name: 'login',
-    component: LoginView,
-  },
-  {
-    path: '/role-select',
-    name: 'role-select',
-    component: RoleSelectView,
-  },
-  {
-    path: '/scouts',
-    name: 'scout-list',
-    component: ScoutListView,
-  },
-  {
-    path: '/scouts/create',
-    name: 'scout-create',
-    component: ScoutCreateView,
-  },
-  {
-    path: '/scouts/:id',
-    name: 'scout-detail',
-    component: ScoutDetailView,
-    props: true,
-  },
-  {
-    path: '/leaders',
-    name: 'leader-list',
-    component: LeaderListView,
-  },
-  {
-    path: '/leaders/:id/approval',
-    name: 'leader-approval',
-    component: LeaderApprovalView,
-    props: true,
-  },
-]
-
-export const router = createRouter({
+const router = createRouter({
   history: createWebHistory(),
-  routes,
+  routes: [
+    {
+      path: '/',
+      redirect: '/login'
+    },
+    {
+      path: '/login',
+      component: () => import('../views/LoginView.vue')
+    },
+    {
+      path: '/role-select',
+      component: () => import('../views/RoleSelectView.vue')
+    },
+    {
+      path: '/scout-list',
+      component: () => import('../views/ScoutListView.vue')
+    },
+    {
+      path: '/scout-create',
+      component: () => import('../views/ScoutCreateView.vue')
+    },
+    {
+      path: '/scout-detail/:id',
+      component: () => import('../views/ScoutDetailView.vue')
+    },
+    {
+      path: '/leader-list',
+      component: () => import('../views/LeaderListView.vue')
+    },
+    {
+      path: '/leader-approval/:id',
+      component: () => import('../views/LeaderApprovalView.vue')
+    }
+  ]
 })
+
+export default router
