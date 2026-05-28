@@ -1,39 +1,66 @@
 {
-  "name": "scout-backend",
+  "name": "scoutdx-backend",
   "version": "1.0.0",
-  "description": "スカウト文作成・承認管理アプリ バックエンド",
+  "description": "ScoutDX Backend API Server",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev": "ts-node-dev --respawn --transpile-only --no-notify src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "start:dev": "npm run dev",
+    "start:prod": "npm run build && npm start",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "test": "jest"
+    "format": "prettier --write \"src/**/*.ts\"",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
   },
-  "keywords": ["scout", "approval", "express", "typescript"],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "scout",
+    "dx",
+    "api",
+    "typescript",
+    "express",
+    "postgresql"
+  ],
+  "author": "ScoutDX Team",
+  "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
     "pg": "^8.11.3",
     "bcrypt": "^5.1.1",
-    "dotenv": "^16.3.1",
+    "jsonwebtoken": "^9.0.2",
     "cors": "^2.8.5",
     "helmet": "^7.1.0",
-    "morgan": "^1.10.0"
+    "cookie-parser": "^1.4.6",
+    "morgan": "^1.10.0",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/node": "^20.10.6",
+    "@types/node": "^20.10.5",
     "@types/pg": "^8.10.9",
     "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.5",
     "@types/cors": "^2.8.17",
+    "@types/cookie-parser": "^1.4.6",
     "@types/morgan": "^1.9.9",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.1",
     "typescript": "^5.3.3",
+    "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.17.0",
-    "@typescript-eslint/parser": "^6.17.0",
-    "eslint": "^8.56.0"
+    "rimraf": "^5.0.5",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.11"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   }
 }

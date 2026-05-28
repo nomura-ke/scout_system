@@ -1,220 +1,263 @@
-import { Request, Response } from 'express';
+// import { Body, Controller, Get, Post } from '@nestjs/common';
+// import { AiService } from '../services/aiService';
+// import { ScoutService } from '../services/scoutService';
+// import { ScoutEntity } from '../types';
+
+// @Controller('api/scouts')
+// export class ScoutController {
+//   constructor(
+//     private readonly scoutService: ScoutService,
+//     private readonly aiService: AiService,
+//   ) {}
+
+//   @Get()
+//   findAll() {
+//     return this.scoutService.findAll();
+//   }
+
+//   @Post()
+//   create(@Body() body: ScoutEntity) {
+//     return this.scoutService.create(body);
+//   }
+
+//   @Get('generate')
+//   generate() {
+//     return this.aiService.getSample();
+//   }
+// }
+
+
+
+
+
+// backend/src/controllers/scoutController.ts
+
+import { Request, Response, NextFunction } from 'express';
 import { scoutService } from '../services/scoutService';
-import { CreateScoutRequest, UpdateScoutRequest } from '../types';
+import { aiService } from '../services/aiService';
 
-export const scoutController = {
-  /**
-   * GET /api/scout
-   * スカウト文一覧取得
-   */
-  getScouts: async (req: Request, res: Response): Promise<void> => {
-    try {
-      const userId = req.userId!;
-      const currentRole = req.currentRole!;
-      const status = req.query.status as string | undefined;
+/**
+ * スカウト文一覧取得（作成者用）
+ * GET /api/scouts
+ */
+export const getScoutList = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user.userId;
+    const currentRole = (req as any).user.currentRole;
 
-      const scouts = await scoutService.getScouts(userId, currentRole, status);
+    // クエリパラメータ（絞り込み条件）
+    const { status, company, position } = req.query;
 
-      res.status(200).json({
-        success: true,
-        data: scouts,
+    const scouts = await scoutService.getScoutsByUser(userId, currentRole, {
+      status: status as string,
+      company: company as string,
+      position: position as string
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        scouts: scouts
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * スカウト文詳細取得
+ * GET /api/scouts/:id
+ */
+export const getScoutDetail = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const scoutId = parseInt(req.params.id);
+    const userId = (req as any).user.userId;
+
+    const scout = await scoutService.getScoutDetail(scoutId, userId);
+
+    if (!scout) {
+      return res.status(404).json({
+        success: false,
+        message: 'スカウト文が見つかりません'
       });
-    } catch (error) {
-      console.error('Get scouts error:', error);
-      res.status(500).json({ success: false, message: 'サーバーエラーが発生しました' });
     }
-  },
 
-  /**
-   * GET /api/scout/:id
-   * スカウト文詳細取得
-   */
-  getScoutById: async (req: Request, res: Response): Promise<void> => {
-    try {
-      const id = parseInt(req.params.id);
+    res.status(200).json({
+      success: true,
+      data: scout
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
-      if (isNaN(id)) {
-        res.status(400).json({ success: false, message: '無効なIDです' });
-        return;
-      }
+/**
+ * スカウト文作成（AI生成）
+ * POST /api/scouts/generate
+ */
+export const generateScout = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user.userId;
+    const { draftData, aiRequest } = req.body;
 
-      const scout = await scoutService.getScoutById(id);
+    // バリデーション
+    if (!draftData || !aiRequest) {
+      return res.status(400).json({
+        success: false,
+        message: '必須項目が不足しています'
+      });
+    }
 
-      if (!scout) {
-        res.status(404).json({ success: false, message: 'スカウト文が見つかりません' });
-        return;
-      }
+    // AI生成処理
+    const generatedText = await aiService.generateScoutText(draftData, aiRequest);
 
-      // コメントも取得
-      const comments = await scoutService.getComments(id);
-
-      res.status(200).json({
-        success: true,
+    // NGワードチェック
+    const ngCheckResult = aiService.checkNGWords(generatedText, aiRequest.ngWords);
+    if (!ngCheckResult.passed) {
+      return res.status(400).json({
+        success: false,
+        message: 'NGワードが含まれています',
         data: {
-          ...scout,
-          comments,
-        },
+          ngWords: ngCheckResult.detectedWords
+        }
       });
-    } catch (error) {
-      console.error('Get scout by id error:', error);
-      res.status(500).json({ success: false, message: 'サーバーエラーが発生しました' });
     }
-  },
 
-  /**
-   * POST /api/scout/create
-   * スカウト文作成
-   */
-  createScout: async (req: Request, res: Response): Promise<void> => {
-    try {
-      const userId = req.userId!;
-      const data = req.body as CreateScoutRequest;
+    // スカウト文保存
+    const scout = await scoutService.createScoutFromGeneration(
+      userId,
+      draftData,
+      aiRequest,
+      generatedText
+    );
 
-      // バリデーション
-      if (!data.applicant_name || !data.company_name || !data.job_title) {
-        res.status(400).json({
-          success: false,
-          message: '求職者名、会社名、職種は必須です',
-        });
-        return;
+    res.status(201).json({
+      success: true,
+      message: 'スカウト文を生成しました',
+      data: {
+        scoutId: scout.id,
+        content: scout.content,
+        draftDetails: scout.draftDetails
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
-      const scout = await scoutService.createScout(userId, data);
+/**
+ * スカウト文更新（編集）
+ * PUT /api/scouts/:id
+ */
+export const updateScout = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const scoutId = parseInt(req.params.id);
+    const userId = (req as any).user.userId;
+    const { content, draftData } = req.body;
 
-      res.status(201).json({
-        success: true,
-        data: scout,
+    if (!content) {
+      return res.status(400).json({
+        success: false,
+        message: 'スカウト文の内容は必須です'
       });
-    } catch (error) {
-      console.error('Create scout error:', error);
-      res.status(500).json({ success: false, message: 'サーバーエラーが発生しました' });
     }
-  },
 
-  /**
-   * PUT /api/scout/:id
-   * スカウト文更新
-   */
-  updateScout: async (req: Request, res: Response): Promise<void> => {
-    try {
-      const id = parseInt(req.params.id);
-      const data = req.body as UpdateScoutRequest;
-      const userId = req.userId!;
+    const result = await scoutService.updateScout(scoutId, userId, content, draftData);
 
-      if (isNaN(id)) {
-        res.status(400).json({ success: false, message: '無効なIDです' });
-        return;
-      }
-
-      // 既存データ確認
-      const existingScout = await scoutService.getScoutById(id);
-      if (!existingScout) {
-        res.status(404).json({ success: false, message: 'スカウト文が見つかりません' });
-        return;
-      }
-
-      // 作成者本人のみ編集可能
-      if (existingScout.creator_id !== userId) {
-        res.status(403).json({ success: false, message: '編集権限がありません' });
-        return;
-      }
-
-      const scout = await scoutService.updateScout(id, data);
-
-      res.status(200).json({
-        success: true,
-        data: scout,
+    if (!result.success) {
+      return res.status(403).json({
+        success: false,
+        message: '編集権限がありません'
       });
-    } catch (error) {
-      console.error('Update scout error:', error);
-      res.status(500).json({ success: false, message: 'サーバーエラーが発生しました' });
     }
-  },
 
-  /**
-   * DELETE /api/scout/:id
-   * スカウト文削除
-   */
-  deleteScout: async (req: Request, res: Response): Promise<void> => {
-    try {
-      const id = parseInt(req.params.id);
-      const userId = req.userId!;
+    res.status(200).json({
+      success: true,
+      message: '保存しました',
+      data: result.scout
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
-      if (isNaN(id)) {
-        res.status(400).json({ success: false, message: '無効なIDです' });
-        return;
-      }
+/**
+ * スカウト文削除
+ * DELETE /api/scouts/:id
+ */
+export const deleteScout = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const scoutId = parseInt(req.params.id);
+    const userId = (req as any).user.userId;
 
-      // 既存データ確認
-      const existingScout = await scoutService.getScoutById(id);
-      if (!existingScout) {
-        res.status(404).json({ success: false, message: 'スカウト文が見つかりません' });
-        return;
-      }
+    const result = await scoutService.deleteScout(scoutId, userId);
 
-      // 作成者本人のみ削除可能
-      if (existingScout.creator_id !== userId) {
-        res.status(403).json({ success: false, message: '削除権限がありません' });
-        return;
-      }
-
-      await scoutService.deleteScout(id);
-
-      res.status(200).json({
-        success: true,
-        message: 'スカウト文を削除しました',
+    if (!result.success) {
+      return res.status(403).json({
+        success: false,
+        message: '削除権限がありません'
       });
-    } catch (error) {
-      console.error('Delete scout error:', error);
-      res.status(500).json({ success: false, message: 'サーバーエラーが発生しました' });
     }
-  },
 
-  /**
-   * POST /api/scout/:id/submit
-   * 承認申請
-   */
-  submitScout: async (req: Request, res: Response): Promise<void> => {
-    try {
-      const id = parseInt(req.params.id);
-      const userId = req.userId!;
+    res.status(200).json({
+      success: true,
+      message: '削除しました'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
-      if (isNaN(id)) {
-        res.status(400).json({ success: false, message: '無効なIDです' });
-        return;
-      }
+/**
+ * 承認申請（営業リーダーへ）
+ * POST /api/scouts/:id/submit
+ */
+export const submitForApproval = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const scoutId = parseInt(req.params.id);
+    const userId = (req as any).user.userId;
 
-      // 既存データ確認
-      const existingScout = await scoutService.getScoutById(id);
-      if (!existingScout) {
-        res.status(404).json({ success: false, message: 'スカウト文が見つかりません' });
-        return;
-      }
+    const result = await scoutService.submitForApproval(scoutId, userId);
 
-      // 作成者本人のみ申請可能
-      if (existingScout.creator_id !== userId) {
-        res.status(403).json({ success: false, message: '申請権限がありません' });
-        return;
-      }
-
-      // DRAFTまたはREJECTEDのみ申請可能
-      if (existingScout.status !== 'DRAFT' && existingScout.status !== 'REJECTED') {
-        res.status(400).json({
-          success: false,
-          message: '申請できるステータスではありません',
-        });
-        return;
-      }
-
-      const scout = await scoutService.submitScout(id);
-
-      res.status(200).json({
-        success: true,
-        data: scout,
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: result.message || '承認申請できません'
       });
-    } catch (error) {
-      console.error('Submit scout error:', error);
-      res.status(500).json({ success: false, message: 'サーバーエラーが発生しました' });
     }
-  },
+
+    res.status(200).json({
+      success: true,
+      message: '承認申請しました',
+      data: {
+        status: result.newStatus
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * 下書き一時保存
+ * POST /api/scouts/draft
+ */
+export const saveDraft = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user.userId;
+    const { content, draftData } = req.body;
+
+    const draft = await scoutService.saveDraft(userId, content, draftData);
+
+    res.status(201).json({
+      success: true,
+      message: '下書きを保存しました',
+      data: {
+        draftId: draft.id
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
 };
