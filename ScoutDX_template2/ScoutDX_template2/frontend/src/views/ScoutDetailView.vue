@@ -138,6 +138,9 @@ const requestApproval = async () => {
   alert('承認申請しました')
   router.push('/scout-list')
 }
+
+
+
 </script>
 
 <style scoped>
