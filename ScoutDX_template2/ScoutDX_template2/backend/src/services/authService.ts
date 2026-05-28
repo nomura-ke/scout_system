@@ -1,78 +1,81 @@
 import bcrypt from 'bcrypt';
-import crypto from 'crypto';
-import { db } from '../repositories/database';
-import { User, Session } from '../types';
+import jwt from 'jsonwebtoken';
+import db from '../repositories/database';
+import { AuthResponse, UserRole } from '../types';
 
 const SALT_ROUNDS = 10;
 const SESSION_EXPIRY_HOURS = 24;
 
 export const authService = {
-  /**
-   * ユーザー認証
-   */
-  authenticateUser: async (username: string, password: string): Promise<User | null> => {
+  authenticate: async (username: string, password: string): Promise<AuthResponse> => {
     const user = await db.findUserByUsername(username);
     if (!user) {
-      return null;
+      return { success: false, message: 'ユーザーが見つかりません' };
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return null;
+      return { success: false, message: 'パスワードが一致しません' };
     }
 
-    return user;
+    const roles = await db.findUserRoles(user.id);
+    const currentRole: UserRole = (roles[0]?.role || 'creator') as UserRole;
+
+    const token = jwt.sign(
+      { userId: user.id, username: user.username, currentRole },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: `${SESSION_EXPIRY_HOURS}h` }
+    );
+
+    await db.createSession(user.id, token, currentRole);
+    await db.updateLastLogin(user.id);
+
+    return {
+      success: true,
+      userId: user.id,
+      username: user.username,
+      token,
+      roles
+    };
   },
 
-  /**
-   * セッション作成
-   */
-  createSession: async (userId: number, roleName: string): Promise<string> => {
-    // ランダムなセッショントークン生成
-    const sessionToken = crypto.randomBytes(32).toString('hex');
+  registerUser: async (username: string, password: string): Promise<AuthResponse> => {
+    const exists = await db.existsUsername(username);
+    if (exists) {
+      return { success: false, message: 'このユーザー名は既に使用されています' };
+    }
 
-    // 有効期限設定
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + SESSION_EXPIRY_HOURS);
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+    const userId = await db.createUser(username, hashedPassword);
+    await db.assignDefaultRole(userId);
 
-    await db.createSession(userId, sessionToken, roleName, expiresAt);
-
-    return sessionToken;
+    return {
+      success: true,
+      userId,
+      username
+    };
   },
 
-  /**
-   * セッション検証
-   */
-  validateSession: async (sessionToken: string): Promise<Session | null> => {
-    return await db.findSessionByToken(sessionToken);
+  getUserRoles: async (userId: number) => {
+    return db.findUserRoles(userId);
   },
 
-  /**
-   * ロール取得
-   */
-  getUserRoles: async (userId: number): Promise<string[]> => {
-    const roles = await db.findRolesByUserId(userId);
-    return roles.map((role) => role.role_name);
+  updateCurrentRole: async (userId: number, roleId: number) => {
+    const roles = await db.findUserRoles(userId);
+    const targetRole = roles.find((role) => role.id === roleId);
+
+    if (!targetRole) {
+      return { success: false, message: 'このロールを選択する権限がありません' };
+    }
+
+    await db.updateSessionRole(userId, roleId);
+    return {
+      success: true,
+      currentRole: targetRole.role
+    };
   },
 
-  /**
-   * ロール選択
-   */
-  selectRole: async (sessionToken: string, roleName: string): Promise<void> => {
-    await db.updateSessionRole(sessionToken, roleName);
-  },
-
-  /**
-   * ログアウト
-   */
-  logout: async (sessionToken: string): Promise<void> => {
-    await db.deleteSession(sessionToken);
-  },
-
-  /**
-   * パスワードハッシュ化（ユーザー登録用）
-   */
-  hashPassword: async (password: string): Promise<string> => {
-    return await bcrypt.hash(password, SALT_ROUNDS);
-  },
+  logout: async (userId: number): Promise<void> => {
+    await db.deleteSession(userId);
+  }
 };

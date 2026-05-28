@@ -77,10 +77,8 @@ export const authenticate = async (
 
     // 2. JWT検証
     const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
-    let decoded: any;
-
     try {
-      decoded = jwt.verify(token, jwtSecret);
+      jwt.verify(token, jwtSecret);
     } catch (error) {
       return res.status(401).json({
         success: false,
@@ -185,7 +183,7 @@ export const optionalAuthenticate = async (
 
     // トークンがある場合は検証
     const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
-    const decoded: any = jwt.verify(token, jwtSecret);
+    jwt.verify(token, jwtSecret);
 
     const session = await database.findSessionByToken(token);
     if (session) {

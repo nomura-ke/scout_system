@@ -46,7 +46,10 @@ export class AppError extends Error {
     this.statusCode = statusCode;
     this.isOperational = true;
 
-    Error.captureStackTrace(this, this.constructor);
+    const captureStackTrace = (Error as any).captureStackTrace;
+    if (typeof captureStackTrace === 'function') {
+      captureStackTrace(this, this.constructor);
+    }
   }
 }
 
@@ -106,7 +109,7 @@ export const errorHandler = (
   error: Error | AppError,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
   // デフォルト値
   let statusCode = 500;
@@ -215,7 +218,7 @@ export const errorHandler = (
 export const notFoundHandler = (
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
   const message = `ルートが見つかりません: ${req.method} ${req.path}`;
   
@@ -230,10 +233,13 @@ export const notFoundHandler = (
       'GET  /health',
       'POST /api/auth/login',
       'POST /api/auth/register',
+      'GET  /api/auth/verify',
       'GET  /api/scouts',
       'POST /api/scouts/generate',
+      'POST /api/scouts/:id/submit',
       'GET  /api/approvals/pending-leader',
-      'GET  /api/approvals/pending-admin'
+      'GET  /api/approvals/pending-admin',
+      'GET  /api/approvals/approved'
     ]
   });
 };
