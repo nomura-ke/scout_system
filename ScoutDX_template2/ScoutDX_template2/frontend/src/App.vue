@@ -1,14 +1,30 @@
 <template>
-  <div class="app-shell">
-    <AppHeader />
-    <main class="app-main">
-      <RouterView />
-    </main>
-    <AppFooter />
+  <div id="app">
+    <router-view />
   </div>
 </template>
 
 <script setup lang="ts">
-import AppFooter from './components/AppFooter.vue'
-import AppHeader from './components/AppHeader.vue'
+// 何も書かない（シンプルに）
 </script>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f5f5f5;
+}
+
+#app {
+  min-height: 100vh;
+}
+</style>
