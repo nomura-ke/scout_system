@@ -216,7 +216,7 @@ creator_aが作成したスカウト文です。
 【勤務地】東京都目黒区
 【想定年収】500万円〜',
 'draft',
-'{"age_range":"20代","gender":"男性","job_category":"プログラマー"}',
+'{"age_range":"20代","gender":"男性","job_category":"プログラマー1"}',
 '{"company_name":"creator_a会社","job_title":"プログラマー","description":"Web開発","required_skills":"PHP, Laravel","location":"東京都目黒区","salary":"500万円〜"}'),
 
 (7, '2024-01-15 10:00:00', 1, 'NGワードテスト 営業募集',
