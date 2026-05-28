@@ -5,6 +5,8 @@ import ScoutListView from '../views/ScoutListView.vue'
 import ScoutCreateView from '../views/ScoutCreateView.vue'
 import ScoutDetailView from '../views/ScoutDetailView.vue'
 import LeaderApprovalView from '../views/LeaderApprovalView.vue'
+import AdminListView from '../views/AdminListView.vue'
+import AdminApprovalView from '../views/AdminApprovalView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,7 +52,12 @@ const router = createRouter({
       name: 'leader-approvals',
       component: LeaderApprovalView
     },
-    // 管理者用（後で作成）
+    // 管理者用
+    {
+      path: '/admin/approvals',
+      name: 'admin-approvals',
+      component: AdminApprovalView
+    },
   ]
 })
 

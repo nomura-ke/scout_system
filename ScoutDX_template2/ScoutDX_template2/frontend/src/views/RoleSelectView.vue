@@ -36,7 +36,7 @@ const selectRole = (role: 'creator' | 'leader' | 'admin') => {
   } else if (role === 'leader') {
     router.push('/leader-list')
   } else {
-    router.push('/admin')
+    router.push('/admin-list')
   }
 }
 </script>
