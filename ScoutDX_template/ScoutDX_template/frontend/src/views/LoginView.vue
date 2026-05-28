@@ -1,4 +1,5 @@
 <template>
+<<<<<<< HEAD
   <div class="login-container">
     <div class="login-card">
       <div class="card-header">
@@ -182,3 +183,9 @@ const handleLogin = async () => {
   margin-top: 8px;
 }
 </style>
+=======
+  <h1>Login</h1>
+</template>
+<script setup>
+</script>
+>>>>>>> ca9d702eda5793a9fcd4cbb8d1b769f6ca615d29

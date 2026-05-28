@@ -1,0 +1,1 @@
+{"root":["./src/main.ts","./src/vite-env.d.ts","./src/api/aiapi.ts","./src/api/client.ts","./src/api/scoutapi.ts","./src/router/index.ts","./src/store/scoutstore.ts","./src/type/scout.ts","./src/app.vue","./src/components/scoutpage.vue"],"version":"5.9.3"}
