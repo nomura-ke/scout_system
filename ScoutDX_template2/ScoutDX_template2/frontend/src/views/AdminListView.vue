@@ -149,7 +149,7 @@ async function fetchScouts() {
 
 // 承認・差戻し画面に遷移
 function goToApprovalDetail(scoutId: number) {
-  router.push(`/admin/approvals/${scoutId}`)
+  router.push(`/admin-approval/${scoutId}`)
 }
 
 // ユーティリティ関数
