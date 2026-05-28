@@ -1,40 +1,61 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import LoginView from '../views/LoginView.vue'
+import RoleSelectView from '../views/RoleSelectView.vue'
+import ScoutListView from '../views/ScoutListView.vue'
+import ScoutCreateView from '../views/ScoutCreateView.vue'
+import ScoutDetailView from '../views/ScoutDetailView.vue'
+import LeaderApprovalView from '../views/LeaderApprovalView.vue'
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      redirect: '/login'
+      redirect: '/role-select'  // 開発中はロール選択を最初に表示
     },
     {
       path: '/login',
-      component: () => import('../views/LoginView.vue')
+      name: 'login',
+      component: LoginView
     },
     {
       path: '/role-select',
-      component: () => import('../views/RoleSelectView.vue')
+      name: 'role-select',
+      component: RoleSelectView
+    },
+    // 作成者用
+    {
+      path: '/scouts',
+      name: 'scouts',
+      component: ScoutListView
     },
     {
-      path: '/scout-list',
-      component: () => import('../views/ScoutListView.vue')
+      path: '/scouts/create',
+      name: 'scout-create',
+      component: ScoutCreateView
     },
     {
-      path: '/scout-create',
-      component: () => import('../views/ScoutCreateView.vue')
+      path: '/scouts/:id',
+      name: 'scout-detail',
+      component: ScoutDetailView
     },
     {
-      path: '/scout-detail/:id',
-      component: () => import('../views/ScoutDetailView.vue')
+      path: '/scouts/:id/edit',
+      name: 'scout-edit',
+      component: ScoutDetailView
     },
+    // リーダー用
     {
-      path: '/leader-list',
-      component: () => import('../views/LeaderListView.vue')
+      path: '/leader/approvals',
+      name: 'leader-approvals',
+      component: LeaderApprovalView
     },
-    {
-      path: '/leader-approval/:id',
-      component: () => import('../views/LeaderApprovalView.vue')
-    }
+    // 管理者用（後で作成）
+    // {
+    //   path: '/admin/approvals',
+    //   name: 'admin-approvals',
+    //   component: AdminApprovalView
+    // },
   ]
 })
 
