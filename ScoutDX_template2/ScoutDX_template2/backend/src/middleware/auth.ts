@@ -1,18 +1,68 @@
-import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
+import { authService } from '../services/authService';
 
-@Injectable()
-export class AuthMiddleware implements NestMiddleware {
-  use(req: Request, _: Response, next: NextFunction) {
-    if (req.path.startsWith('/api/auth')) {
-      return next();
+/**
+ * 認証ミドルウェア
+ * リクエストヘッダーからセッショントークンを取得し、有効性を確認
+ */
+export const authenticate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({
+        success: false,
+        message: '認証が必要です',
+      });
+      return;
     }
 
-    const authorization = req.headers.authorization;
-    if (!authorization) {
-      throw new UnauthorizedException('認証ヘッダーが必要です');
+    const sessionToken = authHeader.replace('Bearer ', '');
+
+    // セッション検証
+    const session = await authService.validateSession(sessionToken);
+
+    if (!session) {
+      res.status(401).json({
+        success: false,
+        message: 'セッションが無効または期限切れです',
+      });
+      return;
+    }
+
+    // リクエストオブジェクトにユーザー情報を追加
+    req.userId = session.user_id;
+    req.currentRole = session.current_role || '';
+
+    next();
+  } catch (error) {
+    console.error('Authentication error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'サーバーエラーが発生しました',
+    });
+  }
+};
+
+/**
+ * ロール権限チェックミドルウェア
+ */
+export const requireRole = (...allowedRoles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const currentRole = req.currentRole;
+
+    if (!currentRole || !allowedRoles.includes(currentRole)) {
+      res.status(403).json({
+        success: false,
+        message: 'アクセス権限がありません',
+      });
+      return;
     }
 
     next();
-  }
-}
+  };
+};

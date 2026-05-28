@@ -1,21 +1,47 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app';
-import { ErrorHandlerFilter } from './middleware/errorHandler';
+import app from './app';
+import { testConnection } from './config/database';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+const PORT = process.env.PORT || 3000;
 
-  app.enableCors({
-    origin: '*',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: 'Content-Type, Accept, Authorization',
-  });
+/**
+ * サーバー起動
+ */
+const startServer = async (): Promise<void> => {
+  try {
+    // データベース接続テスト
+    const isDbConnected = await testConnection();
+    
+    if (!isDbConnected) {
+      console.error('❌ データベース接続に失敗しました');
+      process.exit(1);
+    }
 
-  app.useGlobalFilters(new ErrorHandlerFilter());
+    // サーバー起動
+    app.listen(PORT, () => {
+      console.log('');
+      console.log('🚀 ========================================');
+      console.log(`🚀 Server is running on port ${PORT}`);
+      console.log(`🚀 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🚀 Health check: http://localhost:${PORT}/health`);
+      console.log('🚀 ========================================');
+      console.log('');
+    });
+  } catch (error) {
+    console.error('❌ サーバー起動エラー:', error);
+    process.exit(1);
+  }
+};
 
-  const port = parseInt(process.env.PORT || '3000', 10);
-  await app.listen(port);
-  console.log(`Backend listening on ${port}`);
-}
+// 未処理の例外をキャッチ
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
 
-bootstrap();
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+// サーバー起動
+startServer();

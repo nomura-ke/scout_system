@@ -1,25 +1,37 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 
-@Catch()
-export class ErrorHandlerFilter implements ExceptionFilter {
-  catch(exception: unknown, host: ArgumentsHost): void {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+/**
+ * グローバルエラーハンドラー
+ */
+export const errorHandler = (
+  err: any,
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  console.error('Error:', err);
 
-    const status = exception instanceof HttpException
-      ? exception.getStatus()
-      : HttpStatus.INTERNAL_SERVER_ERROR;
+  // エラーの種類に応じてステータスコードを設定
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'サーバーエラーが発生しました';
 
-    const message = exception instanceof HttpException
-      ? exception.message
-      : 'Internal server error';
+  res.status(statusCode).json({
+    success: false,
+    message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+  });
+};
 
-    response.status(status).json({
-      statusCode: status,
-      path: request.url,
-      message,
-    });
-  }
-}
+/**
+ * 404 Not Found ハンドラー
+ */
+export const notFoundHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  res.status(404).json({
+    success: false,
+    message: `ルート ${req.originalUrl} が見つかりません`,
+  });
+};
