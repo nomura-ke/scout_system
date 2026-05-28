@@ -51,11 +51,6 @@ const router = createRouter({
       component: LeaderApprovalView
     },
     // 管理者用（後で作成）
-    // {
-    //   path: '/admin/approvals',
-    //   name: 'admin-approvals',
-    //   component: AdminApprovalView
-    // },
   ]
 })
 

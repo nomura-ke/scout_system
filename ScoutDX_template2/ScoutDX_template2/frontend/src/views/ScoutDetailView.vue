@@ -128,6 +128,15 @@ onMounted(async () => {
   scoutText.value = data.scoutText
 })
 
+const handleTabChange = (tab: string) => {
+  console.log('📑 タブ切り替え:', tab)
+  if (tab === 'スカウト文作成') {
+    router.push('/scout-create')
+  } else if (tab === 'スカウト文一覧') {
+    router.push('/scout-list')
+  }
+}
+
 const saveScout = async () => {
   await scoutStore.updateScout(scout.value.id, { scoutText: scoutText.value })
   alert('保存しました')

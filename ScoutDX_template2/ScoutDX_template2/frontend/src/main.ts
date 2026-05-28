@@ -37,6 +37,10 @@ const router = createRouter({
     {
       path: '/leader-approval/:id',
       component: () => import('./views/LeaderApprovalView.vue')
+    },
+    {
+      path: '/admin-approval/:id',  // ← 追加
+      component: () => import('./views/AdminApprovalView.vue')
     }
   ]
 })
