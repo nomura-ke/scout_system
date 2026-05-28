@@ -1,0 +1,1 @@
+export enum ScoutStatus { DRAFT = 'DRAFT', PENDING = 'PENDING', APPROVED = 'APPROVED', REJECTED = 'REJECTED' }\n
