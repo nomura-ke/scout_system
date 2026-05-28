@@ -1,27 +1,33 @@
-import { Injectable } from '@nestjs/common';
+import { CreateScoutRequest } from '../types';
 
-@Injectable()
-export class AiService {
-  private readonly samples = [
-    `はじめまして。弊社の採用担当です。
+export const aiService = {
+  /**
+   * 疑似AI：スカウト文生成
+   */
+  generateScoutText: (data: CreateScoutRequest): string => {
+    const { applicant_name, company_name, job_title, job_appeal, ng_words } = data;
 
-プロフィールを拝見し、これまでのご経験に大変興味を持ちました。特にチームでの開発推進や品質改善への取り組みが、当社のカルチャーと合致していると感じています。
+    // NGワードチェック
+    const ngWordList = ng_words ? ng_words.split(',').map((w) => w.trim()) : [];
 
-もしご興味がおありでしたら、まずはカジュアルにお話しできれば幸いです。ご多忙のところ恐れ入りますが、ご検討いただけますと嬉しいです。`,
-    `突然のご連絡失礼いたします。〇〇株式会社でエンジニア採用を担当しております。
+    let text = `${applicant_name}様\n\n`;
+    text += `この度は、${company_name}の${job_title}のポジションについてご案内させていただきます。\n\n`;
 
-ご実績を拝見し、ぜひ当社のプロダクト開発チームでお力をお借りしたいと考え、ご連絡いたしました。リモートワークも可能で、技術選定への関与度も高い環境です。
+    if (job_appeal) {
+      text += `【このポジションの魅力】\n${job_appeal}\n\n`;
+    }
 
-ご不明点があればお気軽にお問い合わせください。面談のご都合がよろしければ、ご返信いただけますと幸いです。`,
-    `プロフィールを拝見し、ご連絡させていただきました。
+    text += `あなたのこれまでのご経験を活かし、さらなるキャリアアップを目指しませんか？\n`;
+    text += `ぜひ一度、カジュアルにお話しさせていただければ幸いです。\n\n`;
+    text += `ご興味がございましたら、お気軽にご返信ください。\n`;
+    text += `何卒よろしくお願いいたします。`;
 
-当社では〇〇領域のサービスを展開しており、バックエンドからフロントエンドまで幅広く携わっていただける方を探しております。ご経験の技術スタックは、現在の開発体制とも好相性です。
+    // NGワードフィルタリング（簡易版）
+    ngWordList.forEach((word) => {
+      const regex = new RegExp(word, 'gi');
+      text = text.replace(regex, '***');
+    });
 
-まずは30分ほどオンラインでご説明させていただければと思います。ご興味をお持ちいただけましたら、お気軽にご返信ください。`,
-  ];
-
-  getSample(): { body: string } {
-    const index = Math.floor(Math.random() * this.samples.length);
-    return { body: this.samples[index] };
-  }
-}
+    return text;
+  },
+};
