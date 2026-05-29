@@ -143,12 +143,17 @@ const saveScout = async () => {
 }
 
 const requestApproval = async () => {
-  await scoutStore.requestApproval(scout.value.id)
-  alert('承認申請しました')
-  router.push('/scout-list')
-}
-
-
+  try {
+    console.log('🚀 承認申請を送信中...');
+    await scoutStore.requestApproval(scout.value.id);
+    console.log('✅ 承認申請成功');
+    alert('承認申請しました');
+    router.push('/scout-list');
+  } catch (e) {
+    console.error('❌ 承認申請失敗:', e);
+    alert('申請に失敗しました: ' + (e instanceof Error ? e.message : e));
+  }
+};
 
 </script>
 

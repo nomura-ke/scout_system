@@ -543,16 +543,49 @@ export const updateScoutStatus = async (
   id: number,
   status: ScoutStatus
 ): Promise<DatabaseResult> => {
+  const shouldSetSubmittedAt = status === 'pending_leader';
+  const shouldSetApprovedAt = status === 'approved';
+
   const query = `
     UPDATE scout_documents
     SET status = $1,
         updated_at = NOW(),
-        submitted_at = CASE WHEN $1 = 'pending_leader' THEN NOW() ELSE submitted_at END,
-        approved_at = CASE WHEN $1 = 'approved' THEN NOW() ELSE approved_at END
+        submitted_at = CASE WHEN $3 THEN NOW() ELSE submitted_at END,
+        approved_at = CASE WHEN $4 THEN NOW() ELSE approved_at END
     WHERE id = $2
   `;
-  
-  const result = await pool.query(query, [status, id]);
+
+  let result;
+  try {
+    result = await pool.query(query, [status, id, shouldSetSubmittedAt, shouldSetApprovedAt]);
+  } catch (error: any) {
+    // 旧スキーマ互換: submitted_at / approved_at 列がない場合
+    if (error?.code === '42703') {
+      const fallbackQuery = `
+        UPDATE scout_documents
+        SET status = $1,
+            updated_at = NOW()
+        WHERE id = $2
+      `;
+      try {
+        result = await pool.query(fallbackQuery, [status, id]);
+      } catch (fallbackError: any) {
+        // さらに旧スキーマ互換: updated_at 列もない場合
+        if (fallbackError?.code === '42703') {
+          const minimalQuery = `
+            UPDATE scout_documents
+            SET status = $1
+            WHERE id = $2
+          `;
+          result = await pool.query(minimalQuery, [status, id]);
+        } else {
+          throw fallbackError;
+        }
+      }
+    } else {
+      throw error;
+    }
+  }
   
   return {
     success: result.rowCount! > 0,
@@ -608,13 +641,59 @@ export const createApprovalHistory = async (
   action: ApprovalAction,
   comment?: string
 ): Promise<void> => {
-  const query = `
-    INSERT INTO approval_history 
-    (document_id, user_id, action, comment, created_at)
-    VALUES ($1, $2, $3, $4, NOW())
-  `;
-  
-  await pool.query(query, [documentId, userId, action, comment]);
+  const actionCandidates: string[] = [action];
+  if (action === 'SUBMITTED') {
+    actionCandidates.push('SUBMIT');
+  }
+
+  const queryPatterns = [
+    {
+      query: `
+        INSERT INTO approval_history 
+        (document_id, user_id, action, comment, created_at)
+        VALUES ($1, $2, $3, $4, NOW())
+      `,
+      paramsBuilder: (candidateAction: string) => [documentId, userId, candidateAction, comment]
+    },
+    {
+      query: `
+        INSERT INTO approval_history 
+        (document_id, user_id, action, created_at)
+        VALUES ($1, $2, $3, NOW())
+      `,
+      paramsBuilder: (candidateAction: string) => [documentId, userId, candidateAction]
+    },
+    {
+      query: `
+        INSERT INTO approval_history 
+        (scout_id, user_id, action, comment, created_at)
+        VALUES ($1, $2, $3, $4, NOW())
+      `,
+      paramsBuilder: (candidateAction: string) => [documentId, userId, candidateAction, comment]
+    },
+    {
+      query: `
+        INSERT INTO approval_history 
+        (scout_id, user_id, action, created_at)
+        VALUES ($1, $2, $3, NOW())
+      `,
+      paramsBuilder: (candidateAction: string) => [documentId, userId, candidateAction]
+    }
+  ];
+
+  let lastError: any;
+  for (const candidateAction of actionCandidates) {
+    for (const pattern of queryPatterns) {
+      try {
+        await pool.query(pattern.query, pattern.paramsBuilder(candidateAction));
+        return;
+      } catch (error: any) {
+        lastError = error;
+      }
+    }
+  }
+
+  throw lastError;
 };
 
 /**

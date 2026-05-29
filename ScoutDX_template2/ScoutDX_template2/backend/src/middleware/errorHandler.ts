@@ -205,6 +205,10 @@ export const errorHandler = (
   if (process.env.NODE_ENV !== 'production') {
     (response as any).stack = error.stack;
     (response as any).errorName = error.name;
+    if ((error as any).code) {
+      (response as any).pgCode = (error as any).code;
+      (response as any).pgDetail = (error as any).detail;
+    }
   }
 
   res.status(statusCode).json(response);
