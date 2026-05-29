@@ -20,7 +20,13 @@
             <button @click="$emit('edit', item.id)" class="btn-edit">編集</button>
           </td>
           <td v-if="showActions">
-            <button @click="$emit('delete', item.id)" class="btn-delete">削除</button>
+            <button
+              @click="$emit('delete', item.id)"
+              class="btn-delete"
+              :disabled="!isDraftStatus(item.status)"
+            >
+              削除
+            </button>
           </td>
         </tr>
       </tbody>
@@ -47,6 +53,11 @@ withDefaults(defineProps<Props>(), {
 })
 
 defineEmits(['edit', 'delete'])
+
+const isDraftStatus = (status: string) => {
+  // APIマッピングの違いに対応（生ステータス/表示ラベル）
+  return status === 'draft' || status === '編集中'
+}
 </script>
 
 <style scoped>
@@ -104,8 +115,19 @@ defineEmits(['edit', 'delete'])
   font-weight: bold;
 }
 
+.btn-delete:disabled {
+  background-color: #9ca3af;
+  color: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
 .btn-edit:hover,
 .btn-delete:hover {
   opacity: 0.9;
+}
+
+.btn-delete:disabled:hover {
+  opacity: 1;
 }
 </style>

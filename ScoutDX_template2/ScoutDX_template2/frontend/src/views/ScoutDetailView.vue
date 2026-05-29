@@ -79,8 +79,8 @@
             ></textarea>
           </div>
           <div class="action-buttons">
-            <button @click="saveScout" class="btn-save">保存</button>
-            <button @click="requestApproval" class="btn-approval">
+            <button @click="saveScout" class="btn-save" :disabled="!isActionEnabled">保存</button>
+            <button @click="requestApproval" class="btn-approval" :disabled="!isActionEnabled">
               承認申請(営業リーダーへ)
             </button>
           </div>
@@ -93,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useScoutStore } from '../stores/scoutStore' 
 import AppHeader from '../components/AppHeader.vue'      // ← 修正
@@ -121,6 +121,8 @@ const scout = ref({
 
 const scoutText = ref('Aiが生成したスカウト文')
 
+const isActionEnabled = computed(() => ['draft', 'rejected'].includes(scout.value.status))
+
 onMounted(async () => {
   const id = route.params.id
   const data = await scoutStore.fetchScoutDetail(Number(id))
@@ -138,11 +140,13 @@ const handleTabChange = (tab: string) => {
 }
 
 const saveScout = async () => {
+  if (!isActionEnabled.value) return
   await scoutStore.updateScout(scout.value.id, { scoutText: scoutText.value })
   alert('保存しました')
 }
 
 const requestApproval = async () => {
+  if (!isActionEnabled.value) return
   try {
     console.log('🚀 承認申請を送信中...');
     await scoutStore.requestApproval(scout.value.id);
@@ -274,6 +278,14 @@ const requestApproval = async () => {
 .btn-save:hover,
 .btn-approval:hover {
   opacity: 0.9;
+}
+
+.btn-save:disabled,
+.btn-approval:disabled {
+  background-color: #9ca3af;
+  color: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 1;
 }
 
 @media (max-width: 968px) {

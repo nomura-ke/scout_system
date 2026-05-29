@@ -85,7 +85,6 @@
         <div class="scout-text-section">
           <h2 class="section-title">スカウト文章</h2>
           <div class="scout-text-card">
-            <p class="scout-text">Aiが生成したスカウト文</p>
             <p class="scout-text">{{ scout.scoutText }}</p>
           </div>
           <div class="reason-input">
@@ -254,6 +253,7 @@ const handleTabChange = (tab: string) => {
 .scout-text {
   color: #666;
   line-height: 1.8;
+  white-space: pre-wrap; 
 }
 
 .reason-input {
