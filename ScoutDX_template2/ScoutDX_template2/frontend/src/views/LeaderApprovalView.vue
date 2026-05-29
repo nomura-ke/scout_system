@@ -1,6 +1,6 @@
 <template>
   <div class="approval-container">
-    <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" />
+    <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" @tab-change="handleTabChange" />
     
     <div class="content">
       <div class="approval-layout">
@@ -11,17 +11,17 @@
             <div class="detail-row">
               <span class="detail-label">ID</span>
               <span class="detail-value">{{ scout.id }}</span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">作成者名前</span>
               <span class="detail-value">{{ scout.creatorName }}</span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">申請日時</span>
               <span class="detail-value">{{ scout.appliedAt }}</span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-group">
               <div class="group-header">
@@ -30,53 +30,53 @@
               <div class="detail-row">
                 <span class="sub-label">名前</span>
                 <span class="sub-value">{{ scout.senderName }}</span>
-                <input type="checkbox" checked class="detail-check" />
+                <input type="checkbox" class="detail-check" />
               </div>
               <div class="detail-row">
                 <span class="sub-label">年齢</span>
                 <span class="sub-value">{{ scout.senderAge }}</span>
-                <input type="checkbox" checked class="detail-check" />
+                <input type="checkbox" class="detail-check" />
               </div>
               <div class="detail-row">
                 <span class="sub-label">性別</span>
                 <span class="sub-value">{{ scout.senderGender }}</span>
-                <input type="checkbox" checked class="detail-check" />
+                <input type="checkbox" class="detail-check" />
               </div>
             </div>
             <div class="detail-row">
               <span class="detail-label">会社名</span>
               <span class="detail-value">{{ scout.companyName }}</span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">職種</span>
               <span class="detail-value">{{ scout.jobType }}</span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">業務内容</span>
               <span class="detail-value"></span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">必須スキル</span>
               <span class="detail-value"></span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">勤務地</span>
               <span class="detail-value">{{ scout.location }}</span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">給与</span>
               <span class="detail-value">{{ scout.salary }}</span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">求人の魅力</span>
               <span class="detail-value"></span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
           </div>
         </div>
@@ -162,6 +162,12 @@ const reject = async () => {
   await scoutStore.rejectScout(scout.value.id, rejectionReason.value)
   alert('差戻しました')
   router.push('/leader-list')
+}
+
+const handleTabChange = (tab: string) => {
+  if (tab === 'スカウト文一覧') {
+    router.push('/leader-list')
+  }
 }
 </script>
 

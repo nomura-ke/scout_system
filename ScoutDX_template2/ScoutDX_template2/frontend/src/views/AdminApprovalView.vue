@@ -1,6 +1,7 @@
 <template>
   <div class="approval-container">
-    <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" />
+     <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" @tab-change="adminListChange" />
+    
     
     <!-- 管理者バナー -->
     <div class="admin-banner">
@@ -17,22 +18,21 @@
             <div class="detail-row">
               <span class="detail-label">ID</span>
               <span class="detail-value">{{ scout.id }}</span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">作成者名前</span>
               <span class="detail-value">{{ scout.creatorName }}</span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">申請日時</span>
               <span class="detail-value">{{ scout.appliedAt }}</span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row highlight">
               <span class="detail-label">営業リーダー承認日</span>
-              <span class="detail-value approved">{{ scout.leaderApprovedAt }}</span>
-              <span class="approved-mark">✓</span>
+              <span class="detail-value approved">{{ leaderApprovalDate }}</span>
             </div>
             <div class="detail-group">
               <div class="group-header">
@@ -41,53 +41,53 @@
               <div class="detail-row">
                 <span class="sub-label">名前</span>
                 <span class="sub-value">{{ scout.senderName }}</span>
-                <input type="checkbox" checked class="detail-check" />
+                <input type="checkbox" class="detail-check" />
               </div>
               <div class="detail-row">
                 <span class="sub-label">年齢</span>
                 <span class="sub-value">{{ scout.senderAge }}</span>
-                <input type="checkbox" checked class="detail-check" />
+                <input type="checkbox" class="detail-check" />
               </div>
               <div class="detail-row">
                 <span class="sub-label">性別</span>
                 <span class="sub-value">{{ scout.senderGender }}</span>
-                <input type="checkbox" checked class="detail-check" />
+                <input type="checkbox" class="detail-check" />
               </div>
             </div>
             <div class="detail-row">
               <span class="detail-label">会社名</span>
               <span class="detail-value">{{ scout.companyName }}</span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">職種</span>
               <span class="detail-value">{{ scout.jobType }}</span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">業務内容</span>
               <span class="detail-value">{{ scout.jobDescription }}</span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">必須スキル</span>
               <span class="detail-value">{{ scout.requiredSkills }}</span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">勤務地</span>
               <span class="detail-value">{{ scout.location }}</span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">給与</span>
               <span class="detail-value">{{ scout.salary }}</span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">求人の魅力</span>
               <span class="detail-value">{{ scout.appeal }}</span>
-              <input type="checkbox" checked class="detail-check" />
+              <input type="checkbox" class="detail-check" />
             </div>
           </div>
         </div>
@@ -124,7 +124,7 @@
               </div>
               <div class="history-body">
                 <p class="history-approver">承認者: {{ scout.leaderApproverName }}</p>
-                <p class="history-date">{{ scout.leaderApprovedAt }}</p>
+                <p class="history-date">{{ leaderApprovalDate }}</p>
               </div>
             </div>
 
@@ -147,11 +147,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useScoutStore } from '../stores/scoutStore' 
 import AppHeader from '../components/AppHeader.vue'
 import AppFooter from '../components/AppFooter.vue'
+
+interface RejectionComment {
+  role: string
+  text: string
+  date: string
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -179,7 +185,12 @@ const scoutText = ref('Aiが生成したスカウト文です。\n\n山田太郎
 
 const rejectionReason = ref('')
 
-const comments = ref([
+const leaderApprovalDate = computed(() => {
+  const s = scout.value as any
+  return s.leaderApprovedAt || s.approvedAt || '未承認'
+})
+
+const comments = ref<RejectionComment[]>([
   // 過去の差戻しコメントがあればここに表示
   // { role: '営業リーダー', text: '敬語を見直してください', date: '2025-09-15 14:30' }
 ])
@@ -213,6 +224,11 @@ const reject = async () => {
   await scoutStore.rejectByAdmin(scout.value.id, rejectionReason.value)
   alert('❌ 差戻しました（管理者）')
   router.push('/admin-list')
+}
+const adminListChange= (tab: string) => {
+  if (tab === 'スカウト文一覧') {
+    router.push('/admin-list')
+  }
 }
 </script>
 
@@ -283,6 +299,7 @@ const reject = async () => {
 }
 
 .detail-row.highlight {
+  grid-template-columns: 120px 1fr;
   background-color: #e8f5e9;
 }
 
