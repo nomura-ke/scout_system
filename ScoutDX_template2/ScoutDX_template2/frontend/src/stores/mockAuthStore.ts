@@ -8,13 +8,20 @@ export const useAuthStore = () => {
   const isAuthenticated = computed(() => !!token.value)
 
   const login = async (employeeId: string, password: string) => {
+    const normalizedEmployeeId = employeeId.trim()
+    const normalizedPassword = password.trim()
+
+    if (!normalizedEmployeeId || !normalizedPassword) {
+      throw new Error('社員番号とパスワードを入力してください')
+    }
+
     console.log('🔐 Mock Login 実行:', { employeeId, password })
     
     // 0.5秒待機（API呼び出しをシミュレート）
     await new Promise(resolve => setTimeout(resolve, 500))
     
-    token.value = 'mock-token-' + employeeId
-    user.value = { name: '田中太郎', employeeId }
+    token.value = 'mock-token-' + normalizedEmployeeId
+    user.value = { name: '田中太郎', employeeId: normalizedEmployeeId }
     
     console.log('✅ Mock Login 成功:', user.value)
     

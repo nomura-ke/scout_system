@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/mockAuthStore'
+import { useAuthStore } from '../stores/authStore'
 
 interface Props {
   tabs?: string[]

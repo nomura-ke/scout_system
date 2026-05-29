@@ -101,10 +101,12 @@ CREATE INDEX idx_scout_documents_status ON scout_documents(status);
 CREATE INDEX idx_approval_history_document_id ON approval_history(document_id);
 CREATE INDEX idx_rejection_comments_document_id ON rejection_comments(document_id);
 
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 INSERT INTO users (username, password) VALUES
-('creator01', '$2b$10$w3Q4Q0Jw8L0y8f3M5C8wjuo7FQb4O5tEw7xf2jov8D1gcNf0rQOaW'),
-('leader01', '$2b$10$w3Q4Q0Jw8L0y8f3M5C8wjuo7FQb4O5tEw7xf2jov8D1gcNf0rQOaW'),
-('admin01', '$2b$10$w3Q4Q0Jw8L0y8f3M5C8wjuo7FQb4O5tEw7xf2jov8D1gcNf0rQOaW');
+('creator01', crypt('Passw0rd!', gen_salt('bf'))),
+('leader01', crypt('Passw0rd!', gen_salt('bf'))),
+('admin01', crypt('Passw0rd!', gen_salt('bf')));
 
 INSERT INTO user_roles (user_id, role) VALUES
 (1, 'creator'),

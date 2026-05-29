@@ -95,7 +95,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useScoutStore } from '../stores/mockScoutStore' 
+import { useScoutStore } from '../stores/scoutStore' 
 import AppHeader from '../components/AppHeader.vue'      // ← 修正
 import AppFooter from '../components/AppFooter.vue' 
 

@@ -21,15 +21,15 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/mockAuthStore'  // ⚠️ 修正2: モックを使用（並行作業のため）
+import { useAuthStore } from '../stores/authStore'
 import AppHeader from '../components/AppHeader.vue'  // ⚠️ 修正2: 相対パスに
 import AppFooter from '../components/AppFooter.vue'  // ⚠️ 修正2: 相対パスに
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-const selectRole = (role: 'creator' | 'leader' | 'admin') => {
-  authStore.setRole(role)
+const selectRole = async (role: 'creator' | 'leader' | 'admin') => {
+  await authStore.setRole(role)
   
   if (role === 'creator') {
     router.push('/scout-list')

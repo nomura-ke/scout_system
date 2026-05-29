@@ -1,355 +1,207 @@
-import type {
-  LoginRequest,
-  LoginResponse,
-  RegisterRequest,
-  UserRole,
-  UserRoleInfo,
-  RoleSelectResponse,
-  ScoutMessage,
-  CreateScoutRequest,
-  UpdateScoutRequest,
-  DraftData,
-  AIGenerationRequest,
-  AIGenerationResponse,
-  ApproveResponse,
-  RejectResponse,
-  RejectionComment,
-} from '../types'
-
-// 環境変数からAPIのベースURLを取得
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
-/**
- * APIエラーハンドリング
- */
-async function handleResponse<T>(response: Response): Promise<T> {
+async function handleResponse<T = any>(response: Response): Promise<T> {
   if (!response.ok) {
-    const error = await response.json().catch(() => ({
-      message: `HTTPエラー: ${response.status}`,
-    }))
+    const error = await response.json().catch(() => ({ message: `HTTPエラー: ${response.status}` }))
     throw new Error(error.message || 'APIエラーが発生しました')
   }
   return response.json()
 }
 
-// ============================================
-// 認証API
-// ============================================
+function getAuthHeaders(): Record<string, string> {
+  const token = localStorage.getItem('token')
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
 
-/**
- * ログイン
- * POST /api/auth/login
- */
-export async function login(payload: LoginRequest): Promise<LoginResponse> {
+export async function login(payload: { username: string; password: string }) {
   const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
-  return handleResponse<LoginResponse>(response)
+  return handleResponse<{ success: boolean; data: any }>(response)
 }
 
-/**
- * ユーザー登録
- * POST /api/auth/register
- */
-export async function register(payload: RegisterRequest): Promise<{ success: boolean; message: string }> {
+export async function register(payload: { username: string; password: string }) {
   const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
   return handleResponse(response)
 }
 
-/**
- * ユーザーのロール一覧取得
- * GET /api/roles/user
- */
-export async function getUserRoles(): Promise<UserRoleInfo[]> {
-  const response = await fetch(`${API_BASE_URL}/api/roles/user`, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
+export async function getUserRoles() {
+  const response = await fetch(`${API_BASE_URL}/api/auth/roles`, {
+    headers: getAuthHeaders(),
   })
-  return handleResponse<UserRoleInfo[]>(response)
+  const result = await handleResponse<{ success: boolean; data: { roles: any[] } }>(response)
+  return result.data.roles
 }
 
-/**
- * 役割選択
- * POST /api/roles/select
- */
-export async function selectRole(role: UserRole): Promise<RoleSelectResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/roles/select`, {
+export async function selectRole(roleId: number) {
+  const response = await fetch(`${API_BASE_URL}/api/auth/role`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ roleId }),
+  })
+  return handleResponse(response)
+}
+
+export async function logout() {
+  const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  })
+  return handleResponse(response)
+}
+
+export async function getScoutDocuments() {
+  const response = await fetch(`${API_BASE_URL}/api/scouts`, {
+    headers: getAuthHeaders(),
+  })
+  const result = await handleResponse<{ success: boolean; data: { scouts: any[] } }>(response)
+  return result.data.scouts
+}
+
+export async function getScoutDetail(id: number) {
+  const response = await fetch(`${API_BASE_URL}/api/scouts/${id}`, {
+    headers: getAuthHeaders(),
+  })
+  const result = await handleResponse<{ success: boolean; data: any }>(response)
+  return result.data
+}
+
+export async function saveDraft(data: { content: string; draftData: any }) {
+  const response = await fetch(`${API_BASE_URL}/api/scouts/draft`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      ...getAuthHeaders(),
     },
-    body: JSON.stringify({ role }),
+    body: JSON.stringify(data),
   })
-  return handleResponse<RoleSelectResponse>(response)
+  return handleResponse(response)
 }
 
-/**
- * ログアウト
- * POST /api/auth/logout
- */
-export async function logout(): Promise<{ success: boolean }> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+export async function saveScout(id: number, data: { content: string; draftData?: any }) {
+  const response = await fetch(`${API_BASE_URL}/api/scouts/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(data),
+  })
+  return handleResponse(response)
+}
+
+export async function submitForApproval(id: number) {
+  const response = await fetch(`${API_BASE_URL}/api/scouts/${id}/submit`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
     },
   })
   return handleResponse(response)
 }
 
-// ============================================
-// スカウト文API（作成者用）
-// ============================================
-
-/**
- * スカウト文一覧取得
- * GET /api/scout-documents
- */
-export async function getScoutDocuments(): Promise<ScoutMessage[]> {
-  const response = await fetch(`${API_BASE_URL}/api/scout-documents`, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-  })
-  return handleResponse<ScoutMessage[]>(response)
-}
-
-/**
- * スカウト文詳細取得
- * GET /scout/:id
- */
-export async function getScoutDetail(id: number): Promise<ScoutMessage> {
-  const response = await fetch(`${API_BASE_URL}/scout/${id}`, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-  })
-  return handleResponse<ScoutMessage>(response)
-}
-
-/**
- * ドラフト詳細取得
- * GET /scout/draft/:id
- */
-export async function getDraftDetail(id: number): Promise<ScoutMessage> {
-  const response = await fetch(`${API_BASE_URL}/scout/draft/${id}`, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-  })
-  return handleResponse<ScoutMessage>(response)
-}
-
-/**
- * スカウト文作成（下書き保存）
- * PUT /scout/draft/:id
- */
-export async function saveDraft(
-  id: number,
-  data: UpdateScoutRequest
-): Promise<ScoutMessage> {
-  const response = await fetch(`${API_BASE_URL}/scout/draft/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-    body: JSON.stringify(data),
-  })
-  return handleResponse<ScoutMessage>(response)
-}
-
-/**
- * スカウト文保存（詳細画面）
- * PUT /scout/:id
- */
-export async function saveScout(
-  id: number,
-  data: UpdateScoutRequest
-): Promise<ScoutMessage> {
-  const response = await fetch(`${API_BASE_URL}/scout/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-    body: JSON.stringify(data),
-  })
-  return handleResponse<ScoutMessage>(response)
-}
-
-/**
- * スカウト文承認申請（ドラフトから）
- * POST /scout/:id/submit-for-approval
- */
-export async function submitForApproval(id: number): Promise<ApproveResponse> {
-  const response = await fetch(`${API_BASE_URL}/scout/${id}/submit-for-approval`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-  })
-  return handleResponse<ApproveResponse>(response)
-}
-
-/**
- * スカウト文申請（詳細画面から）
- * POST /scout/:id/request-approval
- */
-export async function requestApproval(id: number): Promise<ApproveResponse> {
-  const response = await fetch(`${API_BASE_URL}/scout/${id}/request-approval`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-  })
-  return handleResponse<ApproveResponse>(response)
-}
-
-/**
- * スカウト文提出
- * POST /scout/submit
- */
-export async function submitScout(data: CreateScoutRequest): Promise<ScoutMessage> {
-  const response = await fetch(`${API_BASE_URL}/scout/submit`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-    body: JSON.stringify(data),
-  })
-  return handleResponse<ScoutMessage>(response)
-}
-
-/**
- * スカウト文削除
- * DELETE /scout/:id
- */
 export async function deleteScout(id: number): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/scout/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/api/scouts/${id}`, {
     method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
+    headers: getAuthHeaders(),
   })
-  await handleResponse(response)
+  await handleResponse<void>(response)
 }
 
-// ============================================
-// AI生成API
-// ============================================
-
-/**
- * AI生成（完全版）
- * POST /api/scout-documents/generate-full
- */
-export async function generateScoutFull(
-  draftData: DraftData,
-  aiRequest: AIGenerationRequest
-): Promise<AIGenerationResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/scout-documents/generate-full`, {
+export async function generateScoutFull(draftData: any, aiRequest: any) {
+  const response = await fetch(`${API_BASE_URL}/api/scouts/generate`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      ...getAuthHeaders(),
     },
     body: JSON.stringify({ draftData, aiRequest }),
   })
-  return handleResponse<AIGenerationResponse>(response)
+  return handleResponse(response)
 }
 
-// ============================================
-// 承認API（リーダー・管理者共通）
-// ============================================
-
-/**
- * 承認待ちスカウト文一覧取得
- * GET /scout/pending
- */
-export async function getPendingScouts(): Promise<ScoutMessage[]> {
-  const response = await fetch(`${API_BASE_URL}/scout/pending`, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
+export async function getPendingScoutsForLeader() {
+  const response = await fetch(`${API_BASE_URL}/api/approvals/pending-leader`, {
+    headers: getAuthHeaders(),
   })
-  return handleResponse<ScoutMessage[]>(response)
+  const result = await handleResponse<{ success: boolean; data: { scouts: any[] } }>(response)
+  return result.data.scouts
 }
 
-/**
- * 承認済みスカウト文一覧取得
- * GET /scout/approved
- */
-export async function getApprovedScouts(): Promise<ScoutMessage[]> {
-  const response = await fetch(`${API_BASE_URL}/scout/approved`, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
+export async function getPendingScoutsForAdmin() {
+  const response = await fetch(`${API_BASE_URL}/api/approvals/pending-admin`, {
+    headers: getAuthHeaders(),
   })
-  return handleResponse<ScoutMessage[]>(response)
+  const result = await handleResponse<{ success: boolean; data: { scouts: any[] } }>(response)
+  return result.data.scouts
 }
 
-/**
- * 承認（リーダー・管理者共通）
- * POST /scout/:id/approve
- */
-export async function approveScout(id: number): Promise<ApproveResponse> {
-  const response = await fetch(`${API_BASE_URL}/scout/${id}/approve`, {
+export async function getApprovedScouts() {
+  const response = await fetch(`${API_BASE_URL}/api/approvals/approved`, {
+    headers: getAuthHeaders(),
+  })
+  const result = await handleResponse<{ success: boolean; data: { scouts: any[] } }>(response)
+  return result.data.scouts
+}
+
+export async function approveScoutByLeader(id: number, comment?: string) {
+  const response = await fetch(`${API_BASE_URL}/api/approvals/${id}/approve-leader`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      ...getAuthHeaders(),
     },
+    body: JSON.stringify({ comment }),
   })
-  return handleResponse<ApproveResponse>(response)
+  return handleResponse(response)
 }
 
-/**
- * 差戻し（リーダー・管理者共通）
- * POST /scout/:id/reject
- */
-export async function rejectScout(
-  id: number,
-  commentText: string
-): Promise<RejectResponse> {
-  const response = await fetch(`${API_BASE_URL}/scout/${id}/reject`, {
+export async function approveScoutByAdmin(id: number, comment?: string) {
+  const response = await fetch(`${API_BASE_URL}/api/approvals/${id}/approve-admin`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      ...getAuthHeaders(),
     },
-    body: JSON.stringify({ comment_text: commentText }),
+    body: JSON.stringify({ comment }),
   })
-  return handleResponse<RejectResponse>(response)
+  return handleResponse(response)
 }
 
-// ============================================
-// 差戻しコメントAPI
-// ============================================
-
-/**
- * 差戻しコメント履歴取得（全件）
- * GET /scout/:id/comments
- */
-export async function getRejectionComments(scoutId: number): Promise<RejectionComment[]> {
-  const response = await fetch(`${API_BASE_URL}/scout/${scoutId}/comments`, {
+export async function rejectScout(id: number, comment: string) {
+  const response = await fetch(`${API_BASE_URL}/api/approvals/${id}/reject`, {
+    method: 'POST',
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
     },
+    body: JSON.stringify({ comment }),
   })
-  return handleResponse<RejectionComment[]>(response)
+  return handleResponse(response)
+}
+
+export async function getScoutApprovalDetail(id: number) {
+  const response = await fetch(`${API_BASE_URL}/api/approvals/${id}/detail`, {
+    headers: getAuthHeaders(),
+  })
+  const result = await handleResponse<{ success: boolean; data: any }>(response)
+  return result.data
+}
+
+export async function getRejectionComments(id: number) {
+  const response = await fetch(`${API_BASE_URL}/api/approvals/${id}/comments`, {
+    headers: getAuthHeaders(),
+  })
+  const result = await handleResponse<{ success: boolean; data: { comments: any[] } }>(response)
+  return result.data.comments
 }

@@ -1,64 +1,123 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { login, selectRole, logout, getUserRoles } from '../api/scoutApi'
-import type { LoginRequest, UserRole, UserRoleInfo } from '../types'
+import { computed, ref } from 'vue'
+import { getUserRoles, login as loginApi, logout as logoutApi, selectRole } from '../api/scoutApi'
+
+export type UserRole = 'creator' | 'leader' | 'admin'
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string | null>(null)
-  const userId = ref<string | null>(null)
-  const userName = ref<string | null>(null)
-  const userRoles = ref<string | null>(null)
-  const selectedRole = ref<UserRole | null>(null)
-  const availableRoleList = ref<UserRoleInfo[]>([])
-  const isAuthenticated = computed(() => !!token.value)
-  const availableRoles = computed((): UserRole[] => {
-    if (!userRoles.value) return []
-    return userRoles.value.split(',').map(r => r.trim()) as UserRole[]
+  const token = ref<string | null>(localStorage.getItem('token'))
+  const user = ref<{ name: string; employeeId: string }>({
+    name: localStorage.getItem('userName') || '',
+    employeeId: localStorage.getItem('userId') || ''
   })
-  async function signIn(payload: LoginRequest) {
-    const result = await login(payload)
-    token.value = result.token
-    userId.value = result.userId
-    userName.value = result.user.name
-    userRoles.value = result.user.role
-    localStorage.setItem('token', result.token)
-    localStorage.setItem('userId', result.userId)
-    localStorage.setItem('userName', result.user.name)
-    localStorage.setItem('userRoles', result.user.role)
+  const role = ref<UserRole | null>((localStorage.getItem('selectedRole') as UserRole | null) || null)
+  const availableRoleList = ref<Array<{ id: number; role: UserRole; role_name: string }>>([])
+
+  const isAuthenticated = computed(() => !!token.value)
+
+  const login = async (employeeId: string, password: string) => {
+    const username = employeeId.trim()
+    const pass = password.trim()
+
+    if (!username || !pass) {
+      throw new Error('社員番号とパスワードを入力してください')
+    }
+
+    const result = await loginApi({ username, password: pass })
+    const data = result?.data
+
+    if (!result?.success || !data?.token) {
+      throw new Error('ログインに失敗しました')
+    }
+
+    token.value = data.token
+    user.value = {
+      name: data.username || username,
+      employeeId: String(data.userId || '')
+    }
+
+    localStorage.setItem('token', data.token)
+    localStorage.setItem('userId', String(data.userId || ''))
+    localStorage.setItem('userName', data.username || username)
+
+    const roles = Array.isArray(data.roles) ? data.roles : await getUserRoles()
+    availableRoleList.value = roles.map((r: any) => ({
+      id: Number(r.id),
+      role: r.role,
+      role_name: r.role_name
+    }))
+
+    return { user: user.value, token: data.token }
   }
-  async function fetchUserRoles() {
-    const roles = await getUserRoles()
-    availableRoleList.value = roles
+
+  const setRole = async (selectedRole: UserRole) => {
+    if (!availableRoleList.value.length) {
+      const roles = await getUserRoles()
+      availableRoleList.value = roles.map((r: any) => ({
+        id: Number(r.id),
+        role: r.role,
+        role_name: r.role_name
+      }))
+    }
+
+    const target = availableRoleList.value.find((r) => r.role === selectedRole)
+    if (!target) {
+      throw new Error('選択可能なロールが見つかりません')
+    }
+
+    await selectRole(target.id)
+    role.value = selectedRole
+    localStorage.setItem('selectedRole', selectedRole)
   }
-  async function chooseRole(role: UserRole) {
-    await selectRole(role)
-    selectedRole.value = role
-    localStorage.setItem('selectedRole', role)
+
+  const logout = async () => {
+    try {
+      if (token.value) {
+        await logoutApi()
+      }
+    } finally {
+      token.value = null
+      user.value = { name: '', employeeId: '' }
+      role.value = null
+      availableRoleList.value = []
+      localStorage.removeItem('token')
+      localStorage.removeItem('userId')
+      localStorage.removeItem('userName')
+      localStorage.removeItem('selectedRole')
+    }
   }
-  async function signOut() {
-    await logout()
-    token.value = null
-    userId.value = null
-    userName.value = null
-    userRoles.value = null
-    selectedRole.value = null
-    availableRoleList.value = []
-    localStorage.removeItem('token')
-    localStorage.removeItem('userId')
-    localStorage.removeItem('userName')
-    localStorage.removeItem('userRoles')
-    localStorage.removeItem('selectedRole')
-  }
-  function restoreSession() {
+
+  const restoreAuth = async () => {
     token.value = localStorage.getItem('token')
-    userId.value = localStorage.getItem('userId')
-    userName.value = localStorage.getItem('userName')
-    userRoles.value = localStorage.getItem('userRoles')
-    selectedRole.value = localStorage.getItem('selectedRole') as UserRole | null
+    user.value = {
+      name: localStorage.getItem('userName') || '',
+      employeeId: localStorage.getItem('userId') || ''
+    }
+    role.value = (localStorage.getItem('selectedRole') as UserRole | null) || null
+
+    if (token.value) {
+      try {
+        const roles = await getUserRoles()
+        availableRoleList.value = roles.map((r: any) => ({
+          id: Number(r.id),
+          role: r.role,
+          role_name: r.role_name
+        }))
+      } catch {
+        await logout()
+      }
+    }
   }
+
   return {
-    token, userId, userName, userRoles, selectedRole, availableRoleList,
-    isAuthenticated, availableRoles,
-    signIn, fetchUserRoles, chooseRole, signOut, restoreSession,
+    user,
+    token,
+    role,
+    availableRoleList,
+    isAuthenticated,
+    login,
+    setRole,
+    logout,
+    restoreAuth
   }
 })

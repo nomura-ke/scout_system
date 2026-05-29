@@ -85,7 +85,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useScoutStore } from '../stores/mockScoutStore'
+import { useScoutStore } from '../stores/scoutStore'
 import AppHeader from '../components/AppHeader.vue'
 import AppFooter from '../components/AppFooter.vue'
 
