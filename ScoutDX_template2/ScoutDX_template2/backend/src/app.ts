@@ -89,8 +89,8 @@ const createApp = (): Application => {
   // ヘルスチェック
   // =====================================
 
-  app.get('/health', (req: Request, res: Response) => {
-    res.status(200).json({
+  app.get('/health', (_req: Request, res: Response) => {
+    return res.status(200).json({
       success: true,
       message: 'Server is running',
       timestamp: new Date().toISOString(),
@@ -114,8 +114,8 @@ const createApp = (): Application => {
     app.use(express.static(path.join(__dirname, '../../frontend/dist')));
 
     // すべての非APIルートはフロントエンドにフォールバック
-    app.get('*', (req: Request, res: Response) => {
-      res.sendFile(path.join(__dirname, '../../frontend/dist/index.html'));
+    app.get('*', (_req: Request, res: Response) => {
+      return res.sendFile(path.join(__dirname, '../../frontend/dist/index.html'));
     });
   }
 

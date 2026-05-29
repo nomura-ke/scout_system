@@ -99,9 +99,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useScoutStore } from '@/stores/mockScoutStore'
-import AppHeader from '@/components/AppHeader.vue'
-import AppFooter from '@/components/AppFooter.vue'
+import { useScoutStore } from '../stores/mockScoutStore'
+import AppHeader from '../components/AppHeader.vue'
+import AppFooter from '../components/AppFooter.vue'
 
 const router = useRouter()
 const scoutStore = useScoutStore()
@@ -114,7 +114,7 @@ const approvedScoutsData = ref<any[]>([])
 
 // 承認待ちのスカウト文（左側）
 const pendingScouts = computed(() => {
-  return pendingScoutsData.value.sort((a, b) => {
+  return pendingScoutsData.value.sort((a: any, b: any) => {
     const dateA = new Date(a.appliedAt).getTime()
     const dateB = new Date(b.appliedAt).getTime()
     return dateB - dateA // 新しい順
@@ -123,7 +123,7 @@ const pendingScouts = computed(() => {
 
 // 承認済みのスカウト文（右側）
 const approvedScouts = computed(() => {
-  return approvedScoutsData.value.sort((a, b) => {
+  return approvedScoutsData.value.sort((a: any, b: any) => {
     const dateA = new Date(a.approvedAt).getTime()
     const dateB = new Date(b.approvedAt).getTime()
     return dateB - dateA // 新しい順

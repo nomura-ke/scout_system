@@ -1,6 +1,6 @@
 <template>
   <div class="scout-detail-container">
-    <AppHeader :tabs="['スカウト文作成', 'スカウト文一覧']" active-tab="スカウト文一覧" />
+    <AppHeader :tabs="['スカウト文作成', 'スカウト文一覧']" active-tab="スカウト文一覧" @tab-change="handleTabChange" />
     
     <div class="content">
       <div class="detail-layout">

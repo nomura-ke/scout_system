@@ -4,6 +4,7 @@ import RoleSelectView from '../views/RoleSelectView.vue'
 import ScoutListView from '../views/ScoutListView.vue'
 import ScoutCreateView from '../views/ScoutCreateView.vue'
 import ScoutDetailView from '../views/ScoutDetailView.vue'
+import LeaderListView from '../views/LeaderListView.vue'
 import LeaderApprovalView from '../views/LeaderApprovalView.vue'
 import AdminListView from '../views/AdminListView.vue'
 import AdminApprovalView from '../views/AdminApprovalView.vue'
@@ -13,7 +14,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/role-select'  // 開発中はロール選択を最初に表示
+      redirect: '/login'
     },
     {
       path: '/login',
@@ -27,35 +28,45 @@ const router = createRouter({
     },
     // 作成者用
     {
-      path: '/scouts',
-      name: 'scouts',
+      path: '/scout-list',
+      name: 'scout-list',
       component: ScoutListView
     },
     {
-      path: '/scouts/create',
+      path: '/scout-create',
       name: 'scout-create',
       component: ScoutCreateView
     },
     {
-      path: '/scouts/:id',
+      path: '/scout-detail/:id',
       name: 'scout-detail',
       component: ScoutDetailView
     },
     {
-      path: '/scouts/:id/edit',
+      path: '/scout-edit/:id',
       name: 'scout-edit',
       component: ScoutDetailView
     },
     // リーダー用
     {
-      path: '/leader/approvals',
-      name: 'leader-approvals',
+      path: '/leader-list',
+      name: 'leader-list',
+      component: LeaderListView
+    },
+    {
+      path: '/leader-approval/:id',
+      name: 'leader-approval',
       component: LeaderApprovalView
     },
     // 管理者用
     {
-      path: '/admin/approvals',
-      name: 'admin-approvals',
+      path: '/admin-list',
+      name: 'admin-list',
+      component: AdminListView
+    },
+    {
+      path: '/admin-approval/:id',
+      name: 'admin-approval',
       component: AdminApprovalView
     },
   ]

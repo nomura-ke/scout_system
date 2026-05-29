@@ -1,40 +1,10 @@
-// import { Body, Controller, Post } from '@nestjs/common';
-// import { AuthService } from '../services/authService';
-// import { LoginRequest, RoleSelectRequest } from '../types';
-
-// @Controller('api/auth')
-// export class AuthController {
-//   constructor(private readonly authService: AuthService) {}
-
-//   @Post('login')
-//   login(@Body() body: LoginRequest) {
-//     return this.authService.login(body);
-//   }
-
-//   @Post('role')
-//   selectRole(@Body() body: RoleSelectRequest) {
-//     return this.authService.selectRole(body);
-//   }
-// }
-
-// backend/src/controllers/authController.ts
-
-
-
-
-
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/authService';
 
-/**
- * ログイン処理
- * POST /api/auth/login
- */
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { username, password } = req.body;
 
-    // バリデーション
     if (!username || !password) {
       return res.status(400).json({
         success: false,
@@ -42,24 +12,22 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       });
     }
 
-    // 認証処理
     const result = await authService.authenticate(username, password);
-
-    if (!result.success) {
+    if (!result.success || !result.token) {
       return res.status(401).json({
         success: false,
-        message: '認証に失敗しました'
+        message: result.message || '認証に失敗しました'
       });
     }
 
-    // セッショントークンをCookieに設定
     res.cookie('session_token', result.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000 // 24時間
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'ログインに成功しました',
       data: {
@@ -70,19 +38,14 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       }
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-/**
- * ユーザー登録処理
- * POST /api/auth/register
- */
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { username, password } = req.body;
 
-    // バリデーション
     if (!username || !password) {
       return res.status(400).json({
         success: false,
@@ -90,24 +53,22 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
       });
     }
 
-    if (password.length < 6) {
+    if (String(password).length < 8) {
       return res.status(400).json({
         success: false,
-        message: 'パスワードは6文字以上で入力してください'
+        message: 'パスワードは8文字以上で入力してください'
       });
     }
 
-    // ユーザー登録処理
     const result = await authService.registerUser(username, password);
-
     if (!result.success) {
       return res.status(409).json({
         success: false,
-        message: 'このユーザー名は既に使用されています'
+        message: result.message || 'このユーザー名は既に使用されています'
       });
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'ユーザー登録が完了しました',
       data: {
@@ -116,39 +77,41 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
       }
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-/**
- * ユーザーロール一覧取得
- * GET /api/auth/roles
- */
 export const getUserRoles = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = (req as any).user.userId; // 認証ミドルウェアから取得
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: '認証が必要です' });
+    }
 
     const roles = await authService.getUserRoles(userId);
-
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: {
-        roles: roles
+        roles
       }
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-/**
- * 現在のロール更新（ロール切替）
- * PUT /api/auth/role
- */
-export const updateCurrentRole = async (req: Request, res: Response, next: NextFunction) => {
+export const updateCurrentRole = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user?.userId;
     const { roleId } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: '認証が必要です' });
+    }
 
     if (!roleId) {
       return res.status(400).json({
@@ -157,16 +120,15 @@ export const updateCurrentRole = async (req: Request, res: Response, next: NextF
       });
     }
 
-    const result = await authService.updateCurrentRole(userId, roleId);
-
+    const result = await authService.updateCurrentRole(userId, Number(roleId));
     if (!result.success) {
       return res.status(403).json({
         success: false,
-        message: 'このロールを選択する権限がありません'
+        message: result.message || 'このロールを選択する権限がありません'
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'ロールを切り替えました',
       data: {
@@ -174,51 +136,44 @@ export const updateCurrentRole = async (req: Request, res: Response, next: NextF
       }
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-/**
- * ログアウト処理
- * POST /api/auth/logout
- */
 export const logout = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: '認証が必要です' });
+    }
 
     await authService.logout(userId);
-
-    // Cookieクリア
     res.clearCookie('session_token');
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'ログアウトしました'
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-/**
- * セッション検証（トークン有効性チェック）
- * GET /api/auth/verify
- */
 export const verifySession = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = (req as any).user.userId;
-    const username = (req as any).user.username;
-    const currentRole = (req as any).user.currentRole;
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: '認証が必要です' });
+    }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: {
-        userId,
-        username,
-        currentRole
+        userId: req.user.userId,
+        username: req.user.username,
+        currentRole: req.user.currentRole
       }
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };

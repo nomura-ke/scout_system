@@ -54,14 +54,14 @@ export const getScoutList = async (req: Request, res: Response, next: NextFuncti
       position: position as string
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: {
         scouts: scouts
       }
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -71,7 +71,10 @@ export const getScoutList = async (req: Request, res: Response, next: NextFuncti
  */
 export const getScoutDetail = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const scoutId = parseInt(req.params.id);
+    const scoutId = Number(req.params.id ?? 0);
+    if (!Number.isFinite(scoutId) || scoutId <= 0) {
+      return res.status(400).json({ success: false, message: '不正なIDです' });
+    }
     const userId = (req as any).user.userId;
 
     const scout = await scoutService.getScoutDetail(scoutId, userId);
@@ -83,12 +86,12 @@ export const getScoutDetail = async (req: Request, res: Response, next: NextFunc
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: scout
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -132,7 +135,7 @@ export const generateScout = async (req: Request, res: Response, next: NextFunct
       generatedText
     );
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'スカウト文を生成しました',
       data: {
@@ -142,7 +145,7 @@ export const generateScout = async (req: Request, res: Response, next: NextFunct
       }
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -152,7 +155,10 @@ export const generateScout = async (req: Request, res: Response, next: NextFunct
  */
 export const updateScout = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const scoutId = parseInt(req.params.id);
+    const scoutId = Number(req.params.id ?? 0);
+    if (!Number.isFinite(scoutId) || scoutId <= 0) {
+      return res.status(400).json({ success: false, message: '不正なIDです' });
+    }
     const userId = (req as any).user.userId;
     const { content, draftData } = req.body;
 
@@ -172,13 +178,13 @@ export const updateScout = async (req: Request, res: Response, next: NextFunctio
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: '保存しました',
       data: result.scout
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -188,7 +194,10 @@ export const updateScout = async (req: Request, res: Response, next: NextFunctio
  */
 export const deleteScout = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const scoutId = parseInt(req.params.id);
+    const scoutId = Number(req.params.id ?? 0);
+    if (!Number.isFinite(scoutId) || scoutId <= 0) {
+      return res.status(400).json({ success: false, message: '不正なIDです' });
+    }
     const userId = (req as any).user.userId;
 
     const result = await scoutService.deleteScout(scoutId, userId);
@@ -200,12 +209,12 @@ export const deleteScout = async (req: Request, res: Response, next: NextFunctio
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: '削除しました'
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -215,7 +224,10 @@ export const deleteScout = async (req: Request, res: Response, next: NextFunctio
  */
 export const submitForApproval = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const scoutId = parseInt(req.params.id);
+    const scoutId = Number(req.params.id ?? 0);
+    if (!Number.isFinite(scoutId) || scoutId <= 0) {
+      return res.status(400).json({ success: false, message: '不正なIDです' });
+    }
     const userId = (req as any).user.userId;
 
     const result = await scoutService.submitForApproval(scoutId, userId);
@@ -227,7 +239,7 @@ export const submitForApproval = async (req: Request, res: Response, next: NextF
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: '承認申請しました',
       data: {
@@ -235,7 +247,7 @@ export const submitForApproval = async (req: Request, res: Response, next: NextF
       }
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -250,7 +262,7 @@ export const saveDraft = async (req: Request, res: Response, next: NextFunction)
 
     const draft = await scoutService.saveDraft(userId, content, draftData);
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: '下書きを保存しました',
       data: {
@@ -258,6 +270,6 @@ export const saveDraft = async (req: Request, res: Response, next: NextFunction)
       }
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };

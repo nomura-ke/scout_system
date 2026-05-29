@@ -26,6 +26,7 @@
     
     /* モジュール解決 */
     "moduleResolution": "node",
+    "types": ["node"],
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,

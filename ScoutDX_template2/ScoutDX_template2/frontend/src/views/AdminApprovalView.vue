@@ -198,7 +198,7 @@ const approve = async () => {
   
   await scoutStore.approveByAdmin(scout.value.id)
   alert('✅ 最終承認しました！ステータスが「承認済」になりました。')
-  router.push('/leader-list')
+  router.push('/admin-list')
 }
 
 const reject = async () => {
@@ -212,7 +212,7 @@ const reject = async () => {
   
   await scoutStore.rejectByAdmin(scout.value.id, rejectionReason.value)
   alert('❌ 差戻しました（管理者）')
-  router.push('/leader-list')
+  router.push('/admin-list')
 }
 </script>
 

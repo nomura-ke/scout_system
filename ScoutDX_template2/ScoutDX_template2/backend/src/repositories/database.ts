@@ -48,7 +48,7 @@
 
 // backend/src/repositories/database.ts
 
-import { Pool, PoolClient, QueryResult } from 'pg';
+import { PoolClient } from 'pg';
 import pool from '../config/database';
 import {
   User,
@@ -56,7 +56,6 @@ import {
   UserRoleInfo,
   ScoutDocument,
   DraftDetails,
-  AIGenerationLog,
   ApprovalHistory,
   RejectionComment,
   ScoutStatus,
@@ -155,7 +154,7 @@ export const createSession = async (
   currentRole: UserRole
 ): Promise<number> => {
   const query = `
-    INSERT INTO sessions (user_id, token, current_role, created_at, expires_at)
+    INSERT INTO sessions (user_id, token, current_user_role, created_at, expires_at)
     VALUES ($1, $2, $3, NOW(), NOW() + INTERVAL '24 hours')
     RETURNING id
   `;
@@ -170,7 +169,7 @@ export const createSession = async (
  */
 export const findSessionByToken = async (token: string): Promise<Session | null> => {
   const query = `
-    SELECT id, user_id, token, current_role, created_at, expires_at
+    SELECT id, user_id, token, current_user_role AS current_role, created_at, expires_at
     FROM sessions
     WHERE token = $1 AND expires_at > NOW()
   `;
@@ -198,7 +197,7 @@ export const deleteSession = async (userId: number): Promise<void> => {
 export const updateSessionRole = async (userId: number, roleId: number): Promise<void> => {
   const query = `
     UPDATE sessions
-    SET current_role = (SELECT role FROM user_roles WHERE id = $2)
+    SET current_user_role = (SELECT role FROM user_roles WHERE id = $2)
     WHERE user_id = $1
   `;
   
@@ -628,7 +627,7 @@ export const findApprovalHistory = async (documentId: number): Promise<ApprovalH
       ah.document_id,
       ah.user_id,
       u.username as user_name,
-      s.current_role as user_role,
+      s.current_user_role as user_role,
       ah.action,
       ah.comment,
       ah.created_at
@@ -671,7 +670,7 @@ export const findRejectionComments = async (documentId: number): Promise<Rejecti
       rc.document_id,
       rc.user_id,
       u.username as user_name,
-      s.current_role as user_role,
+      s.current_user_role as user_role,
       rc.comment_text,
       rc.created_at
     FROM rejection_comments rc
@@ -689,7 +688,7 @@ export const findRejectionComments = async (documentId: number): Promise<Rejecti
 /**
  * 承認統計情報取得
  */
-export const getApprovalStatistics = async (userId: number, role: UserRole) => {
+export const getApprovalStatistics = async (_userId: number, role: UserRole) => {
   const statusCondition = role === 'leader' ? 'pending_leader' : 'pending_admin';
   
   const query = `
