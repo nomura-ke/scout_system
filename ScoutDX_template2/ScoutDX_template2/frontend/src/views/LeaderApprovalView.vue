@@ -86,6 +86,7 @@
           <h2 class="section-title">スカウト文章</h2>
           <div class="scout-text-card">
             <p class="scout-text">Aiが生成したスカウト文</p>
+            <p class="scout-text">{{ scout.scoutText }}</p>
           </div>
           <div class="reason-input">
             <input
