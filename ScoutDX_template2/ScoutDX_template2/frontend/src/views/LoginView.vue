@@ -41,6 +41,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import AppFooter from '../components/AppFooter.vue'
 
+const iminai = 0
 const router = useRouter()
 const authStore = useAuthStore()
 
