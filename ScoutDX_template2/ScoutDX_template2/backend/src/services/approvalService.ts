@@ -14,9 +14,12 @@ export const approvalService = {
     company?: string;
     position?: string;
   }) => {
-    const approved = await db.findScoutsByStatus('approved');
+    // リーダー画面の「承認済み」は、管理者承認待ち(pending_admin)を表示する
+    // 管理者画面の「最終承認済み」は、approvedを表示する
+    const targetStatus: ScoutStatus = filters.role === 'leader' ? 'pending_admin' : 'approved';
+    const targetScouts = await db.findScoutsByStatus(targetStatus);
 
-    return approved.filter((item: any) => {
+    return targetScouts.filter((item: any) => {
       const byCompany = filters.company
         ? (item.company_name || '').toLowerCase().includes(filters.company.toLowerCase())
         : true;

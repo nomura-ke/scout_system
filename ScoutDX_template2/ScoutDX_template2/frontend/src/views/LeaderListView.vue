@@ -6,7 +6,7 @@
       <div class="list-grid">
         <!-- 左側：承認待ち -->
         <div class="list-section">
-          <h2 class="section-title pending">承認待ち<br/>スカウト文一覧</h2>
+          <h2 class="section-title pending">営業リーダー承認待ち<br/>スカウト文一覧</h2>
           <div class="table-wrapper">
             <table class="scout-table">
               <thead>
@@ -38,7 +38,7 @@
 
         <!-- 右側：承認済み -->
         <div class="list-section">
-          <h2 class="section-title approved">承認済み<br/>スカウト文一覧</h2>
+          <h2 class="section-title approved">管理者承認待ち<br/>スカウト文一覧</h2>
           <div class="table-wrapper">
             <table class="scout-table">
               <thead>

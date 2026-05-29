@@ -19,7 +19,7 @@
       <div v-else class="two-column-layout">
         <!-- 左側：承認待ち -->
         <div class="column pending-column">
-          <h2 class="column-title pending-title">承認待ち<br />スカウト文一覧</h2>
+          <h2 class="column-title pending-title">管理者承認待ち<br />スカウト文一覧</h2>
           
           <div class="table-container">
             <table class="scout-table">
@@ -56,7 +56,7 @@
 
         <!-- 右側：承認済み -->
         <div class="column approved-column">
-          <h2 class="column-title approved-title">承認済み<br />スカウト文一覧</h2>
+          <h2 class="column-title approved-title">最終承認済み<br />スカウト文一覧</h2>
           
           <div class="table-container">
             <table class="scout-table">
