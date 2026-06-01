@@ -243,12 +243,17 @@ export const assignDefaultRole = async (userId: number): Promise<void> => {
 };
 
 /**
- * ロール割当（ユーザー登録時）
+ * ユーザーにロールを付与
  */
 export const assignRole = async (userId: number, role: UserRole): Promise<void> => {
   const query = `
     INSERT INTO user_roles (user_id, role, assigned_at)
-    VALUES ($1, $2, NOW())
+    SELECT $1, $2, NOW()
+    WHERE NOT EXISTS (
+      SELECT 1
+      FROM user_roles
+      WHERE user_id = $1 AND role = $2
+    )
   `;
 
   await pool.query(query, [userId, role]);
@@ -291,6 +296,22 @@ export const findScoutsByCreator = async (
       sd.title,
       dd.company_name,
       dd.position,
+      ag.age_range,
+      ag.gender,
+      ag.prompt as ai_prompt,
+      COALESCE(
+        ag.seeker_name,
+        CASE
+          WHEN ag.prompt IS NOT NULL AND btrim(ag.prompt) LIKE '{%'
+          THEN COALESCE(
+            ag.prompt::jsonb -> 'aiRequest' ->> 'seeker_name',
+            ag.prompt::jsonb -> 'aiRequest' ->> 'seekerName',
+            ag.prompt::jsonb ->> 'seeker_name',
+            ag.prompt::jsonb ->> 'seekerName'
+          )
+          ELSE NULL
+        END
+      ) as seeker_name,
       sd.status,
       CASE 
         WHEN sd.status = 'draft' THEN '編集中'
@@ -305,6 +326,7 @@ export const findScoutsByCreator = async (
       u.username as creator_name
     FROM scout_documents sd
     LEFT JOIN draft_details dd ON sd.id = dd.document_id
+    LEFT JOIN ai_generation_logs ag ON sd.id = ag.document_id
     LEFT JOIN users u ON sd.creator_id = u.id
     WHERE sd.creator_id = $1
   `;
@@ -370,7 +392,23 @@ export const findScoutDetailById = async (id: number): Promise<ScoutDetailRespon
   `;
   
   const aiQuery = `
-    SELECT * FROM ai_generation_logs WHERE document_id = $1
+    SELECT
+      *,
+      COALESCE(
+        seeker_name,
+        CASE
+          WHEN prompt IS NOT NULL AND btrim(prompt) LIKE '{%'
+          THEN COALESCE(
+            prompt::jsonb -> 'aiRequest' ->> 'seeker_name',
+            prompt::jsonb -> 'aiRequest' ->> 'seekerName',
+            prompt::jsonb ->> 'seeker_name',
+            prompt::jsonb ->> 'seekerName'
+          )
+          ELSE NULL
+        END
+      ) as seeker_name
+    FROM ai_generation_logs
+    WHERE document_id = $1
   `;
   
   const scoutResult = await pool.query(scoutQuery, [id]);
@@ -444,13 +482,14 @@ export const createScoutWithTransaction = async (
     // 3. AI生成ログ保存
     const aiQuery = `
       INSERT INTO ai_generation_logs 
-      (document_id, age_range, gender, salary, position, ng_words, 
+      (document_id, seeker_name, age_range, gender, salary, position, ng_words, 
        prompt, response, generated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
     `;
     
     await client.query(aiQuery, [
       documentId,
+      aiRequest.seeker_name || aiRequest.seekerName || null,
       aiRequest.age_range,
       aiRequest.gender,
       aiRequest.salary,
@@ -619,6 +658,22 @@ export const findScoutsByStatus = async (status: ScoutStatus): Promise<ScoutList
       sd.title,
       dd.company_name,
       dd.position,
+      ag.age_range,
+      ag.gender,
+      ag.prompt as ai_prompt,
+      COALESCE(
+        ag.seeker_name,
+        CASE
+          WHEN ag.prompt IS NOT NULL AND btrim(ag.prompt) LIKE '{%'
+          THEN COALESCE(
+            ag.prompt::jsonb -> 'aiRequest' ->> 'seeker_name',
+            ag.prompt::jsonb -> 'aiRequest' ->> 'seekerName',
+            ag.prompt::jsonb ->> 'seeker_name',
+            ag.prompt::jsonb ->> 'seekerName'
+          )
+          ELSE NULL
+        END
+      ) as seeker_name,
       sd.status,
       CASE 
         WHEN sd.status = 'draft' THEN '編集中'
@@ -634,6 +689,7 @@ export const findScoutsByStatus = async (status: ScoutStatus): Promise<ScoutList
       u.username as creator_name
     FROM scout_documents sd
     LEFT JOIN draft_details dd ON sd.id = dd.document_id
+    LEFT JOIN ai_generation_logs ag ON sd.id = ag.document_id
     LEFT JOIN users u ON sd.creator_id = u.id
     WHERE sd.status = $1
     ORDER BY sd.submitted_at DESC
@@ -724,13 +780,7 @@ export const findApprovalHistory = async (documentId: number): Promise<ApprovalH
       ah.created_at
     FROM approval_history ah
     LEFT JOIN users u ON ah.user_id = u.id
-    LEFT JOIN LATERAL (
-      SELECT current_user_role
-      FROM sessions
-      WHERE user_id = ah.user_id
-      ORDER BY created_at DESC
-      LIMIT 1
-    ) s ON true
+    LEFT JOIN sessions s ON ah.user_id = s.user_id
     WHERE ah.document_id = $1
     ORDER BY ah.created_at ASC
   `;
@@ -772,13 +822,7 @@ export const findRejectionComments = async (documentId: number): Promise<Rejecti
       rc.created_at
     FROM rejection_comments rc
     LEFT JOIN users u ON rc.user_id = u.id
-    LEFT JOIN LATERAL (
-      SELECT current_user_role
-      FROM sessions
-      WHERE user_id = rc.user_id
-      ORDER BY created_at DESC
-      LIMIT 1
-    ) s ON true
+    LEFT JOIN sessions s ON rc.user_id = s.user_id
     WHERE rc.document_id = $1
     ORDER BY rc.created_at DESC
   `;

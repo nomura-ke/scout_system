@@ -150,6 +150,7 @@ export interface DraftDetails {
  * AI生成条件
  */
 export interface AIGenerationRequest {
+  seeker_name?: string;      // 求職者名
   age_range: string;        // '20代', '30代', '40代', '50代'
   gender: string;           // '男性', '女性', '指定なし'
   position: string;         // 職種（ドラフトから自動コピー）
@@ -163,6 +164,7 @@ export interface AIGenerationRequest {
 export interface AIGenerationLog {
   id: number;
   document_id: number;
+  seeker_name?: string;
   age_range: string;
   gender: string;
   salary: string;
@@ -184,7 +186,6 @@ export interface ScoutDetailResponse {
     id: number;
     username: string;
   };
-  comments?: RejectionComment[];
 }
 
 /**
@@ -195,6 +196,10 @@ export interface ScoutListItem {
   title: string;
   company_name: string;
   position: string;
+  seeker_name?: string;
+  age_range?: string;
+  gender?: string;
+  ai_prompt?: string;
   status: ScoutStatus;
   status_label: string;     // '編集中', '営業承認待ち', etc.
   is_ai_generated: boolean;

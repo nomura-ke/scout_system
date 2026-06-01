@@ -65,6 +65,7 @@ CREATE TABLE draft_details (
 CREATE TABLE ai_generation_logs (
   id SERIAL PRIMARY KEY,
   document_id INTEGER NOT NULL UNIQUE REFERENCES scout_documents(id) ON DELETE CASCADE,
+  seeker_name VARCHAR(255),
   age_range VARCHAR(100),
   gender VARCHAR(50),
   salary VARCHAR(255),

@@ -30,6 +30,23 @@
 import createApp from './app';
 import pool from './config/database';
 
+const extractSeekerNameFromPrompt = (prompt: unknown): string | null => {
+  if (typeof prompt !== 'string' || !prompt.trim()) return null;
+
+  try {
+    const parsed = JSON.parse(prompt);
+    return (
+      parsed?.aiRequest?.seeker_name ||
+      parsed?.aiRequest?.seekerName ||
+      parsed?.seeker_name ||
+      parsed?.seekerName ||
+      null
+    );
+  } catch {
+    return null;
+  }
+};
+
 /**
  * 環境変数の検証
  */
@@ -117,6 +134,38 @@ const checkTables = async (): Promise<void> => {
 };
 
 /**
+ * 求職者名カラムを既存DBへ安全に追加し、既存データをバックフィル
+ */
+const migrateSeekerNameColumn = async (): Promise<void> => {
+  try {
+    await pool.query(`
+      ALTER TABLE ai_generation_logs
+      ADD COLUMN IF NOT EXISTS seeker_name VARCHAR(255)
+    `);
+
+    const missingResult = await pool.query(`
+      SELECT id, prompt
+      FROM ai_generation_logs
+      WHERE seeker_name IS NULL
+    `);
+
+    for (const row of missingResult.rows) {
+      const seekerName = extractSeekerNameFromPrompt(row.prompt);
+      if (!seekerName) continue;
+
+      await pool.query(
+        `UPDATE ai_generation_logs SET seeker_name = $1 WHERE id = $2`,
+        [seekerName, row.id]
+      );
+    }
+
+    console.log('✅ seeker_nameカラムのマイグレーション完了');
+  } catch (error) {
+    console.warn('⚠️ seeker_nameカラムのマイグレーションをスキップ:', error);
+  }
+};
+
+/**
  * サーバー起動
  */
 const startServer = async (): Promise<void> => {
@@ -139,6 +188,10 @@ const startServer = async (): Promise<void> => {
     
     // テーブル確認
     await checkTables();
+    console.log('');
+
+    // 既存DB向けの軽量マイグレーション
+    await migrateSeekerNameColumn();
     console.log('');
 
     // Expressアプリケーション作成

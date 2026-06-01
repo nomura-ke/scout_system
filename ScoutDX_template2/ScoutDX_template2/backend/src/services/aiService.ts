@@ -4,8 +4,11 @@ export const aiService = {
     const position = draftData?.position || aiRequest?.position || 'ポジション';
     const appeal = draftData?.job_appeal || '';
     const salary = draftData?.salary || aiRequest?.salary || '';
+    const seekerNameRaw = aiRequest?.seeker_name || aiRequest?.seekerName || '';
+    const seekerName = typeof seekerNameRaw === 'string' ? seekerNameRaw.trim() : '';
+    const greeting = seekerName ? `${seekerName}様` : '候補者様';
 
-    let text = '候補者様\n\n';
+    let text = `${greeting}\n\n`;
     text += `この度は、${companyName}の${position}ポジションについてご案内いたします。\n\n`;
 
     if (appeal) {

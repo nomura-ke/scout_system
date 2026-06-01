@@ -1,5 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+function formatDate(dateStr?: string): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  return d.toISOString().slice(0, 10);
+}
 import {
   approveScoutByAdmin,
   approveScoutByLeader,
@@ -23,9 +29,30 @@ export const useScoutStore = defineStore('scout', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
+  const parseSeekerName = (item: any): string => {
+    if (item?.seeker_name) return item.seeker_name
+    const prompt = item?.ai_prompt || item?.prompt
+    if (!prompt || typeof prompt !== 'string') return '候補者'
+
+    try {
+      const parsed = JSON.parse(prompt)
+      return (
+        parsed?.aiRequest?.seeker_name ||
+        parsed?.aiRequest?.seekerName ||
+        parsed?.seekerName ||
+        parsed?.seeker_name ||
+        '候補者'
+      )
+    } catch {
+      return '候補者'
+    }
+  }
+
   const mapListItem = (item: any) => ({
     id: item.id,
-    jobSeeker: item.position || '候補者',
+    jobSeeker: parseSeekerName(item),
+    senderAge: item.age_range || '-',
+    senderGender: item.gender || '-',
     companyName: item.company_name || '-',
     createdAt: item.created_at || item.updated_at || '',
     status: item.status_label || item.status || '-',
@@ -35,29 +62,23 @@ export const useScoutStore = defineStore('scout', () => {
   const mapDetail = (detail: any) => {
     const scout = detail?.scout || {}
     const draft = detail?.draft || {}
-    const approvalHistory = Array.isArray(detail?.approvalHistory) ? detail.approvalHistory : []
-    const leaderApproval = [...approvalHistory]
-      .reverse()
-      .find((item: any) => item?.action === 'APPROVED_LEADER')
+    const aiInfo = detail?.aiInfo || {}
 
     return {
       id: scout.id,
       creatorName: detail?.creator?.username || '',
       appliedAt: scout.submitted_at || scout.updated_at || '',
-      leaderApprovedAt: leaderApproval?.created_at || scout.approved_at || '',
-      leaderApproverName: leaderApproval?.user_name || '',
-      senderName: '候補者',
-      senderAge: '-',
-      senderGender: '-',
+      senderName: parseSeekerName(aiInfo),
+      senderAge: aiInfo.age_range || '-',
+      senderGender: aiInfo.gender || '-',
       companyName: draft.company_name || '',
       jobType: draft.position || '',
-      aiJobType: scout.position || '',
       jobDescription: draft.business_description || '',
       requiredSkills: draft.required_skills || '',
       location: draft.work_location || '',
       salary: draft.salary || '',
       appeal: draft.job_appeal || '',
-      scoutText: scout.content || detail?.aiInfo?.response || '',
+      scoutText: scout.content || '',
       status: scout.status || '',
       raw: detail
     }
@@ -100,7 +121,7 @@ export const useScoutStore = defineStore('scout', () => {
         draftData: data.draftData
       })
       const updated = await fetchScoutById(id)
-      const index = scouts.value.findIndex(s => s.id === id)
+      const index = scouts.value.findIndex((s: any) => s.id === id)
       if (index !== -1) {
         scouts.value[index] = mapListItem(updated.raw?.scout || updated.raw || updated)
       }
@@ -117,7 +138,7 @@ export const useScoutStore = defineStore('scout', () => {
     error.value = null
     try {
       await deleteScoutApi(id)
-      scouts.value = scouts.value.filter(s => s.id !== id)
+      scouts.value = scouts.value.filter((s: any) => s.id !== id)
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'スカウト文の削除に失敗しました'
       throw e
@@ -136,7 +157,7 @@ export const useScoutStore = defineStore('scout', () => {
   const generateScout = async (data: any) => {
     const draftData = {
       company_name: data.companyName,
-      position: data.recruitmentJobType,
+      position: data.jobType,
       business_description: data.jobDescription,
       required_skills: data.requiredSkills,
       work_location: data.location,
@@ -146,6 +167,7 @@ export const useScoutStore = defineStore('scout', () => {
     }
 
     const aiRequest = {
+      seeker_name: data.seekerName || '',
       age_range: data.age || '指定なし',
       gender: data.gender || '指定なし',
       position: data.jobType,
@@ -165,26 +187,104 @@ export const useScoutStore = defineStore('scout', () => {
   }
 
   const fetchLeaderList = async () => {
-    const [pendingLeader, pendingAdmin, approved] = await Promise.all([
-      getPendingScoutsForLeader().catch(() => []),
-      getPendingScoutsForAdmin().catch(() => []),
-      getApprovedScouts().catch(() => [])
+    const [pendingLeaderResult, pendingAdminResult, approvedResult, allScouts] = await Promise.all([
+      getPendingScoutsForLeader()
+        .then((data) => ({ ok: true, data }))
+        .catch(() => ({ ok: false, data: [] as any[] })),
+      getPendingScoutsForAdmin()
+        .then((data) => ({ ok: true, data }))
+        .catch(() => ({ ok: false, data: [] as any[] })),
+      getApprovedScouts()
+        .then((data) => ({ ok: true, data }))
+        .catch(() => ({ ok: false, data: [] as any[] })),
+      getScoutDocuments().catch(() => [] as any[])
     ])
 
-    const pending = [...pendingLeader, ...pendingAdmin].map((item: any) => ({
+    const allItems = Array.isArray(allScouts) ? allScouts : []
+    const pendingLeader = pendingLeaderResult.ok
+      ? pendingLeaderResult.data
+      : allItems.filter((item: any) => item.status === 'pending_leader')
+    const pendingAdmin = pendingAdminResult.ok
+      ? pendingAdminResult.data
+      : allItems.filter((item: any) => item.status === 'pending_admin')
+    const approved = approvedResult.ok
+      ? approvedResult.data
+      : allItems.filter((item: any) => item.status === 'approved')
+
+    const pending = pendingLeader.map((item: any) => ({
       id: item.id,
       companyName: item.company_name || '-',
-      senderName: item.position || '候補者',
+      senderName: parseSeekerName(item),
+      senderAge: item.age_range || '-',
+      senderGender: item.gender || '-',
       creatorName: item.creator_name || '',
-      appliedAt: item.submitted_at || item.updated_at || ''
+      appliedAt: formatDate(item.submitted_at || item.updated_at || '')
+    }))
+
+    const adminPending = pendingAdmin.map((item: any) => ({
+      id: item.id,
+      companyName: item.company_name || '-',
+      senderName: parseSeekerName(item),
+      senderAge: item.age_range || '-',
+      senderGender: item.gender || '-',
+      creatorName: item.creator_name || '',
+      approvedAt: formatDate(item.submitted_at || item.updated_at || '')
     }))
 
     const approvedList = approved.map((item: any) => ({
       id: item.id,
       companyName: item.company_name || '-',
-      senderName: item.position || '候補者',
+      senderName: parseSeekerName(item),
+      senderAge: item.age_range || '-',
+      senderGender: item.gender || '-',
       creatorName: item.creator_name || '',
-      approvedAt: item.approved_at || item.updated_at || ''
+      approvedAt: formatDate(item.approved_at || item.updated_at || '')
+    }))
+
+    return {
+      pending,
+      adminPending,
+      approved: approvedList
+    }
+  }
+
+  const fetchAdminList = async () => {
+    const [pendingAdminResult, approvedResult, allScouts] = await Promise.all([
+      getPendingScoutsForAdmin()
+        .then((data) => ({ ok: true, data }))
+        .catch(() => ({ ok: false, data: [] as any[] })),
+      getApprovedScouts()
+        .then((data) => ({ ok: true, data }))
+        .catch(() => ({ ok: false, data: [] as any[] })),
+      getScoutDocuments().catch(() => [] as any[])
+    ])
+
+    const allItems = Array.isArray(allScouts) ? allScouts : []
+    const pendingAdmin = pendingAdminResult.ok
+      ? pendingAdminResult.data
+      : allItems.filter((item: any) => item.status === 'pending_admin')
+    const approved = approvedResult.ok
+      ? approvedResult.data
+      : allItems.filter((item: any) => item.status === 'approved')
+
+    const pending = pendingAdmin.map((item: any) => ({
+      id: item.id,
+      companyName: item.company_name || '-',
+      senderName: parseSeekerName(item),
+      senderAge: item.age_range || '-',
+      senderGender: item.gender || '-',
+      creatorName: item.creator_name || '',
+      appliedAt: formatDate(item.submitted_at || item.updated_at || '')
+    }))
+
+    const approvedList = approved.map((item: any) => ({
+      id: item.id,
+      companyName: item.company_name || '-',
+      senderName: parseSeekerName(item),
+      senderAge: item.age_range || '-',
+      senderGender: item.gender || '-',
+      creatorName: item.creator_name || '',
+      approvedAt: formatDate(item.approved_at || item.updated_at || '')
     }))
 
     return {
@@ -210,9 +310,15 @@ export const useScoutStore = defineStore('scout', () => {
   }
 
   const fetchApprovalDetail = async (id: number) => {
-    const detail = await getScoutApprovalDetail(id)
-    const comments = await getRejectionComments(id)
-    return { detail: mapDetail(detail), comments }
+    const [detail, comments] = await Promise.all([
+      getScoutApprovalDetail(id),
+      getRejectionComments(id).catch(() => [])
+    ])
+
+    return {
+      detail: mapDetail(detail),
+      comments: Array.isArray(comments) ? comments : []
+    }
   }
 
   return {
@@ -224,6 +330,7 @@ export const useScoutStore = defineStore('scout', () => {
     deleteScout,
     requestApproval,
     fetchLeaderList,
+    fetchAdminList,
     approveScout,
     rejectScout,
     approveByAdmin,
