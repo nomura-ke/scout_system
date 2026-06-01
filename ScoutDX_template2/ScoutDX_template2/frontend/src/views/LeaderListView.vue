@@ -36,9 +36,9 @@
           </div>
         </div>
 
-        <!-- 右側：承認済み -->
+        <!-- 中央：管理者承認待ち -->
         <div class="list-section">
-          <h2 class="section-title approved">管理者承認待ち<br/>スカウト文一覧</h2>
+          <h2 class="section-title waiting-admin">管理者承認待ち<br/>スカウト文一覧</h2>
           <div class="table-wrapper">
             <table class="scout-table">
               <thead>
@@ -52,7 +52,38 @@
               </thead>
               <tbody>
                 <tr
-                  v-for="item in approvedRows"
+                  v-for="item in adminPendingRows"
+                  :key="item.id"
+                  class="clickable-row"
+                >
+                  <td>{{ item.id }}</td>
+                  <td><a href="#" class="link">{{ item.companyName }}</a></td>
+                  <td>{{ item.senderName }}</td>
+                  <td>{{ item.creatorName }}</td>
+                  <td>{{ item.approvedAt }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 右側：最終承認済み -->
+        <div class="list-section">
+          <h2 class="section-title approved">最終承認済み<br/>スカウト文一覧</h2>
+          <div class="table-wrapper">
+            <table class="scout-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>会社名</th>
+                  <th>送信先名前</th>
+                  <th>作成者（営業担当者名）</th>
+                  <th>承認日</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="item in finalApprovedRows"
                   :key="item.id"
                   class="clickable-row"
                 >
@@ -84,7 +115,8 @@ const router = useRouter()
 const scoutStore = useScoutStore()
 
 const pendingList = ref<any[]>([])
-const approvedList = ref<any[]>([])
+const adminPendingList = ref<any[]>([])
+const finalApprovedList = ref<any[]>([])
 const formatJstDateTimeHM = (value: string) => {
   if (!value) return ''
   const date = new Date(value)
@@ -107,8 +139,14 @@ const pendingRows = computed<any[]>(() =>
     appliedAt: formatJstDateTimeHM(String(item.appliedAt || ''))
   }))
 )
-const approvedRows = computed<any[]>(() =>
-  approvedList.value.map((item: any) => ({
+const adminPendingRows = computed<any[]>(() =>
+  adminPendingList.value.map((item: any) => ({
+    ...item,
+    approvedAt: formatJstDateTimeHM(String(item.approvedAt || ''))
+  }))
+)
+const finalApprovedRows = computed<any[]>(() =>
+  finalApprovedList.value.map((item: any) => ({
     ...item,
     approvedAt: formatJstDateTimeHM(String(item.approvedAt || ''))
   }))
@@ -117,7 +155,8 @@ const approvedRows = computed<any[]>(() =>
 onMounted(async () => {
   const data = await scoutStore.fetchLeaderList()
   pendingList.value = data.pending
-  approvedList.value = data.approved
+  adminPendingList.value = data.adminPending
+  finalApprovedList.value = data.approved
 })
 
 const viewDetail = (id: number) => {
@@ -136,7 +175,7 @@ const viewDetail = (id: number) => {
 
 .list-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: var(--space-7);
 }
 
@@ -150,6 +189,11 @@ const viewDetail = (id: number) => {
 .section-title.pending {
   color: var(--color-danger);
   background-color: var(--color-danger-soft);
+}
+
+.section-title.waiting-admin {
+  color: var(--color-warning);
+  background-color: var(--color-warning-soft);
 }
 
 .section-title.approved {
@@ -182,6 +226,12 @@ const viewDetail = (id: number) => {
 }
 
 @media (max-width: 1200px) {
+  .list-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 900px) {
   .list-grid {
     grid-template-columns: 1fr;
   }

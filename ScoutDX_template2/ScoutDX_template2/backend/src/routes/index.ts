@@ -31,7 +31,7 @@ router.post('/scouts/draft', authenticate, authorize('creator', 'leader', 'admin
 // 承認関連ルート
 // ===============================================
 router.get('/approvals/pending-leader', authenticate, authorize('leader'), approvalController.getPendingForLeader);
-router.get('/approvals/pending-admin', authenticate, authorize('admin'), approvalController.getPendingForAdmin);
+router.get('/approvals/pending-admin', authenticate, authorize('leader', 'admin'), approvalController.getPendingForAdmin);
 router.get('/approvals/approved', authenticate, authorize('leader', 'admin'), approvalController.getApprovedList);
 router.get('/approvals/statistics', authenticate, authorize('leader', 'admin'), approvalController.getApprovalStatistics);
 router.post('/approvals/bulk-approve', authenticate, authorize('leader', 'admin'), approvalController.bulkApprove);
