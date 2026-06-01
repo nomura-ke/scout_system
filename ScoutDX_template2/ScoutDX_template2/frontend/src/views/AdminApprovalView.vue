@@ -220,28 +220,34 @@ const comments = ref<RejectionComment[]>([
   // { role: '営業リーダー', text: '敬語を見直してください', date: '2025-09-15 14:30' }
 ])
 
+const formatDateTime = (value: unknown) => {
+  if (!value) return '-'
+  const text = String(value)
+  return text.replace('T', ' ').replace('Z', '')
+}
+
+const normalizeComment = (comment: any): RejectionComment => ({
+  role: comment?.role || comment?.user_role || comment?.reviewer_name || comment?.user_name || '承認者',
+  text: comment?.text || comment?.comment_text || comment?.comment || '',
+  date: formatDateTime(comment?.date || comment?.created_at)
+})
+
+const dedupeComments = (items: RejectionComment[]) => {
+  const unique = new Map<string, RejectionComment>()
+  items.forEach((item: RejectionComment) => {
+    unique.set(`${item.role}|${item.text}|${item.date}`, item)
+  })
+  return Array.from(unique.values())
+}
+
 onMounted(async () => {
   const id = Number(route.params.id)
-  if (!Number.isFinite(id) || id <= 0) {
-    loadError.value = '不正なIDです'
-    isLoading.value = false
-    return
-  }
-
-  try {
-    const data = await scoutStore.fetchScoutDetail(id)
-    scout.value = {
-      ...scout.value,
-      ...data
-    }
-    scoutText.value = data.scoutText || ''
-    console.log('👔 管理者最終承認画面を表示:', id)
-  } catch (e) {
-    loadError.value = e instanceof Error ? e.message : 'データ取得に失敗しました'
-    console.error('❌ 管理者最終承認画面の取得失敗:', e)
-  } finally {
-    isLoading.value = false
-  }
+  const { detail, comments: rawComments } = await scoutStore.fetchApprovalDetail(id)
+  scout.value = detail
+  scoutText.value = detail.scoutText || scoutText.value
+  const normalized = (Array.isArray(rawComments) ? rawComments : []).map(normalizeComment)
+  comments.value = dedupeComments(normalized)
+  console.log('👔 管理者最終承認画面を表示:', id)
 })
 
 const approve = async () => {

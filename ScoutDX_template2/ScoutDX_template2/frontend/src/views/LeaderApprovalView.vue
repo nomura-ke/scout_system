@@ -107,8 +107,14 @@
         <div class="comment-section">
           <div class="comment-box">
             <h3 class="comment-title">過去の差戻しコメント</h3>
-            <p class="comment-item">差戻しコメント１：</p>
-            <p class="comment-item">差戻しコメント２：</p>
+            <div v-if="comments.length > 0">
+              <div v-for="(comment, index) in comments" :key="index" class="comment-item">
+                <p class="comment-role">{{ comment.role }}:</p>
+                <p class="comment-text">{{ comment.text }}</p>
+                <p class="comment-date">{{ comment.date }}</p>
+              </div>
+            </div>
+            <p v-else class="comment-item">差戻しコメントはありません</p>
           </div>
         </div>
       </div>
@@ -124,6 +130,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { useScoutStore } from '../stores/scoutStore' 
 import AppHeader from '../components/AppHeader.vue'
 import AppFooter from '../components/AppFooter.vue'
+
+interface RejectionCommentView {
+  role: string
+  text: string
+  date: string
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -145,6 +157,27 @@ const scout = ref({
 })
 
 const rejectionReason = ref('')
+const comments = ref<RejectionCommentView[]>([])
+
+const formatDateTime = (value: unknown) => {
+  if (!value) return '-'
+  const text = String(value)
+  return text.replace('T', ' ').replace('Z', '')
+}
+
+const normalizeComment = (comment: any): RejectionCommentView => ({
+  role: comment?.role || comment?.user_role || comment?.reviewer_name || comment?.user_name || '承認者',
+  text: comment?.text || comment?.comment_text || comment?.comment || '',
+  date: formatDateTime(comment?.date || comment?.created_at)
+})
+
+const dedupeComments = (items: RejectionCommentView[]) => {
+  const unique = new Map<string, RejectionCommentView>()
+  items.forEach((item: RejectionCommentView) => {
+    unique.set(`${item.role}|${item.text}|${item.date}`, item)
+  })
+  return Array.from(unique.values())
+}
 
 const formatJstDateTimeHM = (value: string) => {
   if (!value) return ''
@@ -168,23 +201,10 @@ const appliedAtJst = computed(() => {
 
 onMounted(async () => {
   const id = Number(route.params.id)
-  if (!Number.isFinite(id) || id <= 0) {
-    loadError.value = '不正なIDです'
-    isLoading.value = false
-    return
-  }
-
-  try {
-    const data = await scoutStore.fetchScoutDetail(id)
-    scout.value = {
-      ...scout.value,
-      ...data
-    }
-  } catch (e) {
-    loadError.value = e instanceof Error ? e.message : 'データ取得に失敗しました'
-  } finally {
-    isLoading.value = false
-  }
+  const { detail, comments: rawComments } = await scoutStore.fetchApprovalDetail(id)
+  scout.value = detail
+  const normalized = (Array.isArray(rawComments) ? rawComments : []).map(normalizeComment)
+  comments.value = dedupeComments(normalized)
 })
 
 const approve = async () => {
@@ -363,6 +383,23 @@ const handleTabChange = (tab: string) => {
 .comment-item {
   margin-bottom: 0.5rem;
   color: #666;
+}
+
+.comment-role {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.comment-text {
+  margin: 0 0 0.25rem;
+  color: #444;
+}
+
+.comment-date {
+  margin: 0;
+  color: #888;
+  font-size: 0.85rem;
 }
 
 @media (max-width: 1200px) {

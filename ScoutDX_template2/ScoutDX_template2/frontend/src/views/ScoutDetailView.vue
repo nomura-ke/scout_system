@@ -84,6 +84,21 @@
               承認申請(営業リーダーへ)
             </button>
           </div>
+
+          <div v-if="showRejectionComments" class="rejection-comments">
+            <h3 class="rejection-title">差戻しコメント</h3>
+            <div v-if="rejectionComments.length > 0" class="rejection-list">
+              <div
+                v-for="(comment, index) in rejectionComments"
+                :key="index"
+                class="rejection-item"
+              >
+                <p class="rejection-meta">{{ comment.role }} / {{ comment.date }}</p>
+                <p class="rejection-text">{{ comment.text }}</p>
+              </div>
+            </div>
+            <p v-else class="rejection-empty">差戻しコメントはありません</p>
+          </div>
         </div>
       </div>
     </div>
@@ -93,11 +108,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useScoutStore } from '../stores/scoutStore' 
-import AppHeader from '../components/AppHeader.vue'      // ← 修正
+import AppHeader from '../components/AppHeader.vue'    
 import AppFooter from '../components/AppFooter.vue' 
+
+interface RejectionCommentView {
+  role: string
+  text: string
+  date: string
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -116,10 +137,58 @@ const scout = ref({
   requiredSkills: '',
   location: '東京都港区',
   salary: '600万円~',
-  appeal: ''
+  appeal: '',
+  status: 'draft'
 })
 
 const scoutText = ref('Aiが生成したスカウト文')
+const rejectionComments = ref<RejectionCommentView[]>([])
+
+const isRejectedStatus = (status: string | undefined) => {
+  if (!status) return false
+  const normalized = String(status).toLowerCase()
+  return normalized === 'rejected' || status === '差戻し'
+}
+
+const showRejectionComments = computed(() => isRejectedStatus(scout.value.status))
+
+const formatDateTime = (value: unknown) => {
+  if (!value) return '-'
+  const text = String(value)
+  return text.replace('T', ' ').replace('Z', '')
+}
+
+const normalizeComment = (comment: any): RejectionCommentView => ({
+  role: comment?.role || comment?.user_role || comment?.reviewer_name || comment?.user_name || '承認者',
+  text: comment?.text || comment?.comment_text || comment?.comment || '',
+  date: formatDateTime(comment?.date || comment?.created_at)
+})
+
+const resolveRejectionComments = (data: any): RejectionCommentView[] => {
+  const mappedComments = Array.isArray(data?.rejectionComments) ? data.rejectionComments : []
+  if (mappedComments.length > 0) {
+    const normalized = mappedComments.map(normalizeComment)
+    const unique = new Map<string, RejectionCommentView>()
+    normalized.forEach((item: RejectionCommentView) => {
+      unique.set(`${item.role}|${item.text}|${item.date}`, item)
+    })
+    return Array.from(unique.values())
+  }
+
+  const rawComments = Array.isArray(data?.comments)
+    ? data.comments
+    : Array.isArray(data?.raw?.comments)
+      ? data.raw.comments
+      : []
+
+  const normalized = rawComments.map(normalizeComment)
+  const unique = new Map<string, RejectionCommentView>()
+  normalized.forEach((item: RejectionCommentView) => {
+    unique.set(`${item.role}|${item.text}|${item.date}`, item)
+  })
+
+  return Array.from(unique.values())
+}
 
 const isActionEnabled = computed(() => ['draft', 'rejected'].includes(scout.value.status))
 
@@ -128,6 +197,10 @@ onMounted(async () => {
   const data = await scoutStore.fetchScoutDetail(Number(id))
   scout.value = data
   scoutText.value = data.scoutText
+
+  if (isRejectedStatus(data.status)) {
+    rejectionComments.value = resolveRejectionComments(data)
+  }
 })
 
 const handleTabChange = (tab: string) => {
@@ -280,12 +353,46 @@ const requestApproval = async () => {
   opacity: 0.9;
 }
 
-.btn-save:disabled,
-.btn-approval:disabled {
-  background-color: #9ca3af;
-  color: #f3f4f6;
-  cursor: not-allowed;
-  opacity: 1;
+.rejection-comments {
+  background: #fff7f7;
+  border: 1px solid #ffd7d7;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.rejection-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+  color: #b71c1c;
+}
+
+.rejection-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.rejection-item {
+  background: #ffffff;
+  border: 1px solid #ffe3e3;
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+
+.rejection-meta {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.rejection-text {
+  margin: 0;
+  line-height: 1.6;
+  color: #333;
+}
+
+.rejection-empty {
+  margin: 0;
+  color: #666;
 }
 
 @media (max-width: 968px) {
