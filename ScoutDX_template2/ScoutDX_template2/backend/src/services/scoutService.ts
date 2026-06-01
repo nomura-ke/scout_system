@@ -48,15 +48,6 @@ export const scoutService = {
       };
     }
 
-    // 管理者承認待ち・承認済みは承認履歴を付与する
-    if (detail.scout.status === 'pending_admin' || detail.scout.status === 'approved') {
-      const approvalHistory = await db.findApprovalHistory(scoutId);
-      return {
-        ...detail,
-        approvalHistory
-      };
-    }
-
     return detail;
   },
 

@@ -64,8 +64,6 @@ export const useScoutStore = defineStore('scout', () => {
     const scout = detail?.scout || {}
     const draft = detail?.draft || {}
     const aiInfo = detail?.aiInfo || {}
-    const approvalHistory = Array.isArray(detail?.approvalHistory) ? detail.approvalHistory : []
-    const rejectionComments = Array.isArray(detail?.comments) ? detail.comments : []
 
     return {
       id: scout.id,
@@ -85,8 +83,6 @@ export const useScoutStore = defineStore('scout', () => {
       appeal: draft.job_appeal || '',
       scoutText: scout.content || '',
       status: scout.status || '',
-      approvalHistory,
-      rejectionComments,
       raw: detail
     }
   }

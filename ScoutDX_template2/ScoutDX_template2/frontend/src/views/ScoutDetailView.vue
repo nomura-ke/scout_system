@@ -1,6 +1,6 @@
 <template>
   <div class="scout-detail-container">
-    <AppHeader :tabs="['スカウト文作成', 'スカウト文一覧']" active-tab="スカウト文一覧" @tab-change="handleTabChange" />
+    <AppHeader :tabs="['スカウト文作成', 'スカウト文一覧']" active-tab="スカウト文一覧" :show-logout="true" @tab-change="handleTabChange" />
     
     <div class="content">
       <div class="detail-layout">
@@ -18,7 +18,7 @@
             </div>
             <div class="detail-row">
               <span class="detail-label">申請日時</span>
-              <span class="detail-value">{{ scout.appliedAt }}</span>
+              <span class="detail-value">{{ appliedAtJst }}</span>
             </div>
             <div class="detail-group">
               <span class="detail-label">送信者情報</span>
@@ -42,7 +42,7 @@
               <span class="detail-value">{{ scout.companyName }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">職種</span>
+              <span class="detail-label">募集職種</span>
               <span class="detail-value">{{ scout.jobType }}</span>
             </div>
             <div class="detail-row">
@@ -79,8 +79,8 @@
             ></textarea>
           </div>
           <div class="action-buttons">
-            <button @click="saveScout" class="btn-save">保存</button>
-            <button @click="requestApproval" class="btn-approval">
+            <button @click="saveScout" class="btn-save" :disabled="!isActionEnabled">保存</button>
+            <button @click="requestApproval" class="btn-approval" :disabled="!isActionEnabled">
               承認申請(営業リーダーへ)
             </button>
           </div>
@@ -104,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useScoutStore } from '../stores/scoutStore' 
 import AppHeader from '../components/AppHeader.vue'      // ← 修正
@@ -133,7 +133,8 @@ const scout = ref({
   requiredSkills: '',
   location: '東京都港区',
   salary: '600万円~',
-  appeal: ''
+  appeal: '',
+  status: 'draft'
 })
 
 const scoutText = ref('Aiが生成したスカウト文')
@@ -209,15 +210,14 @@ const handleTabChange = (tab: string) => {
 }
 
 const saveScout = async () => {
+  if (!isActionEnabled.value) return
   await scoutStore.updateScout(scout.value.id, { scoutText: scoutText.value })
   alert('保存しました')
 }
 
 const requestApproval = async () => {
+  if (!isActionEnabled.value) return
   try {
-    const confirmed = confirm('営業リーダーへ承認申請しますか？')
-    if (!confirmed) return
-
     console.log('🚀 承認申請を送信中...');
     await scoutStore.requestApproval(scout.value.id);
     console.log('✅ 承認申請成功');
@@ -234,67 +234,55 @@ const requestApproval = async () => {
 <style scoped>
 .scout-detail-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
-  display: flex;
-  flex-direction: column;
 }
 
 .content {
-  flex: 1;
   max-width: 1400px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 2rem;
 }
 
 .detail-layout {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
-  gap: 2rem;
+  gap: var(--space-7);
 }
 
 .section-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .detail-card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
 .detail-row {
   display: grid;
   grid-template-columns: 140px 1fr;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .detail-label,
 .sub-label {
-  padding: 0.75rem 1rem;
-  background-color: #f5f5f5;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface-muted);
   font-weight: 500;
-  border-right: 1px solid #e0e0e0;
+  border-right: 1px solid var(--color-border);
 }
 
 .detail-value,
 .sub-value {
-  padding: 0.75rem 1rem;
+  padding: var(--space-3) var(--space-4);
 }
 
 .detail-group {
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .detail-group .detail-label {
   display: block;
-  padding: 0.75rem 1rem;
-  background-color: #f5f5f5;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface-muted);
   font-weight: 500;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .detail-sub {
@@ -302,45 +290,31 @@ const requestApproval = async () => {
 }
 
 .scout-text-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.5rem;
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
 }
 
 .scout-textarea {
-  width: 100%;
   min-height: 400px;
-  padding: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
   resize: vertical;
 }
 
 .action-buttons {
   display: flex;
-  gap: 1rem;
+  gap: var(--space-4);
   justify-content: flex-end;
 }
 
 .btn-save {
-  padding: 0.75rem 2rem;
-  background-color: #0066cc;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  padding: var(--space-3) var(--space-7);
+  border-radius: var(--radius-sm);
   font-weight: bold;
   cursor: pointer;
 }
 
 .btn-approval {
-  padding: 0.75rem 2rem;
-  background-color: #0066cc;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  padding: var(--space-3) var(--space-7);
+  border-radius: var(--radius-sm);
   font-weight: bold;
   cursor: pointer;
 }
