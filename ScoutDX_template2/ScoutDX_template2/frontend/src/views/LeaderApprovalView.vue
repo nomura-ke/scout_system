@@ -1,10 +1,15 @@
 <template>
   <div class="approval-container">
-    <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" :show-logout="true" @tab-change="handleTabChange" />
-    
+    <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" @tab-change="handleTabChange" />
+
+    <div class="leader-banner">
+      <span class="leader-badge">👔 営業リーダー承認</span>
+      <span class="status-badge">承認待ち</span>
+    </div>
+
     <div class="content">
-      <div v-if="isLoading" class="state-message">読み込み中...</div>
-      <div v-else-if="loadError" class="state-message error">{{ loadError }}</div>
+      
+      <div v-if="loadError" class="state-message error">{{ loadError }}</div>
       <div v-else class="approval-layout">
         <!-- 左側：スカウト文詳細 -->
         <div class="detail-section">
@@ -13,17 +18,18 @@
             <div class="detail-row">
               <span class="detail-label">ID</span>
               <span class="detail-value">{{ scout.id }}</span>
-              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">作成者名前</span>
               <span class="detail-value">{{ scout.creatorName }}</span>
-              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">申請日時</span>
               <span class="detail-value">{{ appliedAtJst }}</span>
-              <input type="checkbox" class="detail-check" />
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">前回承認日時</span>
+              <span class="detail-value">{{ leaderApprovalDateJst }}</span>
             </div>
             <div class="detail-group">
               <div class="group-header">
@@ -87,9 +93,10 @@
         <div class="scout-text-section">
           <h2 class="section-title">スカウト文章</h2>
           <div class="scout-text-card">
-            <p class="scout-text">{{ scoutTextDisplay }}</p>
+            <p class="scout-text">{{ scoutText }}</p>
           </div>
           <div class="reason-input">
+            <label class="reason-label">差戻理由（営業リーダー）</label>
             <input
               v-model="rejectionReason"
               type="text"
@@ -106,6 +113,18 @@
         <!-- 右側：過去の差戻しコメント -->
         <div class="comment-section">
           <div class="comment-box">
+            <h3 class="comment-title">📋 承認履歴</h3>
+            <div class="history-item">
+              <div class="history-header">
+                <span class="history-role">営業リーダー</span>
+                <span class="history-status approved">✓ 確認中</span>
+              </div>
+              <div class="history-body">
+                <p class="history-approver">担当者: {{ scout.creatorName }}</p>
+                <p class="history-date">申請: {{ appliedAtJst }}</p>
+              </div>
+            </div>
+
             <h3 class="comment-title">過去の差戻しコメント</h3>
             <div v-if="comments.length > 0">
               <div v-for="(comment, index) in comments" :key="index" class="comment-item">
@@ -125,7 +144,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useScoutStore } from '../stores/scoutStore' 
 import AppHeader from '../components/AppHeader.vue'
@@ -147,38 +166,28 @@ const scout = ref({
   id: 0,
   creatorName: '',
   appliedAt: '',
+  leaderApprovedAt: '',
+  leaderApproverName: '',
   senderName: '',
   senderAge: '',
   senderGender: '',
   companyName: '',
   jobType: '',
+  jobDescription: '',
+  requiredSkills: '',
   location: '',
   salary: '',
-  scoutText: ''
+  appeal: ''
 })
 
 const rejectionReason = ref('')
 const comments = ref<RejectionCommentView[]>([])
+const scoutText = ref('')
 
-const formatDateTime = (value: unknown) => {
-  if (!value) return '-'
-  const text = String(value)
-  return text.replace('T', ' ').replace('Z', '')
-}
-
-const normalizeComment = (comment: any): RejectionCommentView => ({
-  role: comment?.role || comment?.user_role || comment?.reviewer_name || comment?.user_name || '承認者',
-  text: comment?.text || comment?.comment_text || comment?.comment || '',
-  date: formatDateTime(comment?.date || comment?.created_at)
+const leaderApprovalDate = computed(() => {
+  const s = scout.value as any
+  return s.leaderApprovedAt || s.approvedAt || ''
 })
-
-const dedupeComments = (items: RejectionCommentView[]) => {
-  const unique = new Map<string, RejectionCommentView>()
-  items.forEach((item: RejectionCommentView) => {
-    unique.set(`${item.role}|${item.text}|${item.date}`, item)
-  })
-  return Array.from(unique.values())
-}
 
 const formatJstDateTimeHM = (value: string) => {
   if (!value) return ''
@@ -200,21 +209,44 @@ const appliedAtJst = computed(() => {
   return formatJstDateTimeHM(String((scout.value as any).appliedAt || ''))
 })
 
-const scoutTextDisplay = computed(() => {
-  const value = (scout.value as any).scoutText
-  if (value) return String(value)
-  return String((scout.value as any)?.raw?.aiInfo?.response || '')
+const leaderApprovalDateJst = computed(() => {
+  return formatJstDateTimeHM(String(leaderApprovalDate.value || ''))
 })
+
+const formatDateTime = (value: unknown) => {
+  if (!value) return '-'
+  const text = String(value)
+  return text.replace('T', ' ').replace('Z', '')
+}
+
+const normalizeComment = (comment: any): RejectionCommentView => ({
+  role: comment?.role || comment?.user_role || comment?.reviewer_name || comment?.user_name || '承認者',
+  text: comment?.text || comment?.comment_text || comment?.comment || '',
+  date: formatDateTime(comment?.date || comment?.created_at)
+})
+
+const dedupeComments = (items: RejectionCommentView[]) => {
+  const unique = new Map<string, RejectionCommentView>()
+  items.forEach((item: RejectionCommentView) => {
+    unique.set(`${item.role}|${item.text}|${item.date}`, item)
+  })
+  return Array.from(unique.values())
+}
 
 onMounted(async () => {
   try {
     const id = Number(route.params.id)
+    if (!Number.isFinite(id) || id <= 0) {
+      throw new Error('不正なIDです')
+    }
+
     const { detail, comments: rawComments } = await scoutStore.fetchApprovalDetail(id)
     scout.value = detail
+    scoutText.value = detail.scoutText || scoutText.value
     const normalized = (Array.isArray(rawComments) ? rawComments : []).map(normalizeComment)
     comments.value = dedupeComments(normalized)
   } catch (e) {
-    loadError.value = e instanceof Error ? e.message : 'スカウト文詳細の取得に失敗しました'
+    loadError.value = e instanceof Error ? e.message : 'データ取得に失敗しました'
   } finally {
     isLoading.value = false
   }
@@ -246,54 +278,93 @@ const handleTabChange = (tab: string) => {
 <style scoped>
 .approval-container {
   min-height: 100vh;
+  background-color: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+}
+
+.leader-banner {
+  background: linear-gradient(135deg, #ffd166 0%, #f4a261 100%);
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.leader-badge {
+  color: #4a2d00;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.status-badge {
+  background: white;
+  color: #a85c00;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: bold;
 }
 
 .content {
+  flex: 1;
   max-width: 1600px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
 .state-message {
-  border-radius: var(--radius-md);
-  padding: var(--space-6);
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
   text-align: center;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .state-message.error {
-  color: var(--color-danger);
+  color: #b71c1c;
 }
 
 .approval-layout {
   display: grid;
   grid-template-columns: 1fr 1.2fr 0.8fr;
-  gap: var(--space-7);
+  gap: 2rem;
 }
 
 .section-title {
-  margin-bottom: var(--space-6);
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
 }
 
 .detail-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
 .detail-row {
   display: grid;
   grid-template-columns: 120px 1fr 40px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid #e0e0e0;
   align-items: center;
 }
 
 .detail-label,
 .sub-label {
-  padding: var(--space-3) var(--space-4);
-  background-color: var(--color-surface-muted);
+  padding: 0.75rem 1rem;
+  background-color: #f5f5f5;
   font-weight: 500;
-  border-right: 1px solid var(--color-border);
+  border-right: 1px solid #e0e0e0;
 }
 
 .detail-value,
 .sub-value {
-  padding: var(--space-3) var(--space-4);
+  padding: 0.75rem 1rem;
 }
 
 .detail-check {
@@ -301,99 +372,155 @@ const handleTabChange = (tab: string) => {
 }
 
 .detail-group {
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .group-header {
-  padding: var(--space-3) var(--space-4);
-  background-color: var(--color-surface-muted);
+  padding: 0.75rem 1rem;
+  background-color: #f5f5f5;
   font-weight: 500;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .scout-text-card {
-  padding: var(--space-7);
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   min-height: 300px;
-  margin-bottom: var(--space-6);
+  margin-bottom: 1.5rem;
 }
 
 .scout-text {
-  color: var(--color-text);
+  color: #666;
   line-height: 1.8;
-  white-space: pre-wrap;
 }
 
 .reason-input {
-  margin-bottom: var(--space-6);
+  margin-bottom: 1.5rem;
+}
+
+.reason-label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #333;
 }
 
 .reason-field {
-  border-width: 1px;
-  border-color: #95c2ad;
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid #4caf50;
+  border-radius: 4px;
+  font-size: 1rem;
 }
 
 .action-buttons {
   display: flex;
-  gap: var(--space-4);
+  gap: 1rem;
   justify-content: flex-end;
 }
 
 .btn-reject {
-  padding: var(--space-3) var(--space-7);
-  border-radius: var(--radius-sm);
+  padding: 0.75rem 2rem;
+  background-color: #d32f2f;
+  color: white;
+  border: none;
+  border-radius: 4px;
   font-weight: bold;
   cursor: pointer;
 }
 
 .btn-approve {
-  padding: var(--space-3) var(--space-7);
-  border-radius: var(--radius-sm);
-  background: var(--color-primary);
-  color: #fff;
-  border: 1px solid var(--color-primary);
+  padding: 0.75rem 2rem;
+  background-color: #f9a825;
+  color: white;
+  border: none;
+  border-radius: 4px;
   font-weight: bold;
   cursor: pointer;
 }
 
-.btn-approve:hover {
-  background: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
-}
-
 .comment-section {
-  padding: var(--space-6);
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   height: fit-content;
 }
 
 .comment-title {
-  font-size: var(--font-lg);
-  font-weight: 700;
-  margin: 0 0 var(--space-4);
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.history-item {
+  background: #fff8e1;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #f9a825;
+  margin-bottom: 1rem;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.history-role {
+  font-weight: bold;
+  color: #333;
+}
+
+.history-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.history-status.approved {
+  background: #f9a825;
+  color: white;
+}
+
+.history-body {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.history-approver {
+  margin-bottom: 0.25rem;
+}
+
+.history-date {
+  font-size: 0.85rem;
+  color: #999;
 }
 
 .comment-item {
-  margin-bottom: var(--space-4);
-  padding: var(--space-3);
-  background: #fff9e6;
-  border-left: 3px solid #ffc107;
-  border-radius: var(--radius-sm);
+  margin-bottom: 0.5rem;
+  color: #666;
 }
 
 .comment-role {
-  margin: 0 0 var(--space-1);
+  margin: 0 0 0.25rem;
   font-weight: 600;
-  color: var(--color-text);
+  color: #333;
 }
 
 .comment-text {
-  margin: 0 0 var(--space-1);
-  color: var(--color-text-muted);
+  margin: 0 0 0.25rem;
+  color: #444;
 }
 
 .comment-date {
   margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--font-sm);
+  color: #888;
+  font-size: 0.85rem;
 }
 
 @media (max-width: 1200px) {

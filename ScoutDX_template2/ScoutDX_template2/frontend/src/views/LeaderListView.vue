@@ -85,8 +85,34 @@ const scoutStore = useScoutStore()
 
 const pendingList = ref<any[]>([])
 const approvedList = ref<any[]>([])
-const pendingRows = computed<any[]>(() => pendingList.value)
-const approvedRows = computed<any[]>(() => approvedList.value)
+const formatJstDateTimeHM = (value: string) => {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+
+  return new Intl.DateTimeFormat('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).format(date)
+}
+
+const pendingRows = computed<any[]>(() =>
+  pendingList.value.map((item: any) => ({
+    ...item,
+    appliedAt: formatJstDateTimeHM(String(item.appliedAt || ''))
+  }))
+)
+const approvedRows = computed<any[]>(() =>
+  approvedList.value.map((item: any) => ({
+    ...item,
+    approvedAt: formatJstDateTimeHM(String(item.approvedAt || ''))
+  }))
+)
 
 onMounted(async () => {
   const data = await scoutStore.fetchLeaderList()
