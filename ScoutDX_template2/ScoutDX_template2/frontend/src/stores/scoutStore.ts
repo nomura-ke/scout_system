@@ -1,5 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+function formatDate(dateStr?: string): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  return d.toISOString().slice(0, 10);
+}
 import {
   approveScoutByAdmin,
   approveScoutByLeader,
@@ -40,8 +46,6 @@ export const useScoutStore = defineStore('scout', () => {
       id: scout.id,
       creatorName: detail?.creator?.username || '',
       appliedAt: scout.submitted_at || scout.updated_at || '',
-      leaderApprovedAt: scout.leader_approved_at || scout.approved_at || scout.updated_at || '',
-      approvedAt: scout.approved_at || scout.updated_at || '',
       senderName: '候補者',
       senderAge: '-',
       senderGender: '-',
@@ -95,7 +99,7 @@ export const useScoutStore = defineStore('scout', () => {
         draftData: data.draftData
       })
       const updated = await fetchScoutById(id)
-      const index = scouts.value.findIndex(s => s.id === id)
+      const index = scouts.value.findIndex((s: any) => s.id === id)
       if (index !== -1) {
         scouts.value[index] = mapListItem(updated.raw?.scout || updated.raw || updated)
       }
@@ -112,7 +116,7 @@ export const useScoutStore = defineStore('scout', () => {
     error.value = null
     try {
       await deleteScoutApi(id)
-      scouts.value = scouts.value.filter(s => s.id !== id)
+      scouts.value = scouts.value.filter((s: any) => s.id !== id)
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'スカウト文の削除に失敗しました'
       throw e
@@ -166,12 +170,20 @@ export const useScoutStore = defineStore('scout', () => {
       getApprovedScouts().catch(() => [])
     ])
 
-    const pending = [...pendingLeader, ...pendingAdmin].map((item: any) => ({
+    const pending = pendingLeader.map((item: any) => ({
       id: item.id,
       companyName: item.company_name || '-',
       senderName: item.position || '候補者',
       creatorName: item.creator_name || '',
-      appliedAt: item.submitted_at || item.updated_at || ''
+      appliedAt: formatDate(item.submitted_at || item.updated_at || '')
+    }))
+
+    const adminPending = pendingAdmin.map((item: any) => ({
+      id: item.id,
+      companyName: item.company_name || '-',
+      senderName: item.position || '候補者',
+      creatorName: item.creator_name || '',
+      approvedAt: formatDate(item.submitted_at || item.updated_at || '')
     }))
 
     const approvedList = approved.map((item: any) => ({
@@ -179,7 +191,36 @@ export const useScoutStore = defineStore('scout', () => {
       companyName: item.company_name || '-',
       senderName: item.position || '候補者',
       creatorName: item.creator_name || '',
-      approvedAt: item.approved_at || item.updated_at || ''
+      approvedAt: formatDate(item.approved_at || item.updated_at || '')
+    }))
+
+    return {
+      pending,
+      adminPending,
+      approved: approvedList
+    }
+  }
+
+  const fetchAdminList = async () => {
+    const [pendingAdmin, approved] = await Promise.all([
+      getPendingScoutsForAdmin().catch(() => []),
+      getApprovedScouts().catch(() => [])
+    ])
+
+    const pending = pendingAdmin.map((item: any) => ({
+      id: item.id,
+      companyName: item.company_name || '-',
+      senderName: item.position || '候補者',
+      creatorName: item.creator_name || '',
+      appliedAt: formatDate(item.submitted_at || item.updated_at || '')
+    }))
+
+    const approvedList = approved.map((item: any) => ({
+      id: item.id,
+      companyName: item.company_name || '-',
+      senderName: item.position || '候補者',
+      creatorName: item.creator_name || '',
+      approvedAt: formatDate(item.approved_at || item.updated_at || '')
     }))
 
     return {
@@ -205,9 +246,15 @@ export const useScoutStore = defineStore('scout', () => {
   }
 
   const fetchApprovalDetail = async (id: number) => {
-    const detail = await getScoutApprovalDetail(id)
-    const comments = await getRejectionComments(id)
-    return { detail: mapDetail(detail), comments }
+    const [detail, comments] = await Promise.all([
+      getScoutApprovalDetail(id),
+      getRejectionComments(id).catch(() => [])
+    ])
+
+    return {
+      detail: mapDetail(detail),
+      comments: Array.isArray(comments) ? comments : []
+    }
   }
 
   return {
@@ -219,6 +266,7 @@ export const useScoutStore = defineStore('scout', () => {
     deleteScout,
     requestApproval,
     fetchLeaderList,
+    fetchAdminList,
     approveScout,
     rejectScout,
     approveByAdmin,

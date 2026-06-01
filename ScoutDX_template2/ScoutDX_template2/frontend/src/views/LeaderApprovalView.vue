@@ -3,9 +3,7 @@
     <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" @tab-change="handleTabChange" />
     
     <div class="content">
-      <div v-if="isLoading" class="state-message">読み込み中...</div>
-      <div v-else-if="loadError" class="state-message error">{{ loadError }}</div>
-      <div v-else class="approval-layout">
+      <div class="approval-layout">
         <!-- 左側：スカウト文詳細 -->
         <div class="detail-section">
           <h2 class="section-title">スカウト文詳細</h2>
@@ -22,7 +20,7 @@
             </div>
             <div class="detail-row">
               <span class="detail-label">申請日時</span>
-              <span class="detail-value">{{ appliedAtJst }}</span>
+              <span class="detail-value">{{ scout.appliedAt }}</span>
               <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-group">
@@ -107,14 +105,8 @@
         <div class="comment-section">
           <div class="comment-box">
             <h3 class="comment-title">過去の差戻しコメント</h3>
-            <div v-if="comments.length > 0">
-              <div v-for="(comment, index) in comments" :key="index" class="comment-item">
-                <p class="comment-role">{{ comment.role }}:</p>
-                <p class="comment-text">{{ comment.text }}</p>
-                <p class="comment-date">{{ comment.date }}</p>
-              </div>
-            </div>
-            <p v-else class="comment-item">差戻しコメントはありません</p>
+            <p class="comment-item">差戻しコメント１：</p>
+            <p class="comment-item">差戻しコメント２：</p>
           </div>
         </div>
       </div>
@@ -125,86 +117,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useScoutStore } from '../stores/scoutStore' 
 import AppHeader from '../components/AppHeader.vue'
 import AppFooter from '../components/AppFooter.vue'
 
-interface RejectionCommentView {
-  role: string
-  text: string
-  date: string
-}
-
 const route = useRoute()
 const router = useRouter()
 const scoutStore = useScoutStore()
-const isLoading = ref(true)
-const loadError = ref('')
 
 const scout = ref({
-  id: 0,
-  creatorName: '',
-  appliedAt: '',
-  senderName: '',
-  senderAge: '',
-  senderGender: '',
-  companyName: '',
-  jobType: '',
-  location: '',
-  salary: ''
+  id: 1,
+  creatorName: '賀上',
+  appliedAt: '2025-09-15 23:47:43',
+  senderName: '山田太郎',
+  senderAge: 23,
+  senderGender: '男',
+  companyName: '(株)トラスト',
+  jobType: 'エンジニア',
+  location: '東京都港区',
+  salary: '600万円~'
 })
 
 const rejectionReason = ref('')
-const comments = ref<RejectionCommentView[]>([])
-
-const formatDateTime = (value: unknown) => {
-  if (!value) return '-'
-  const text = String(value)
-  return text.replace('T', ' ').replace('Z', '')
-}
-
-const normalizeComment = (comment: any): RejectionCommentView => ({
-  role: comment?.role || comment?.user_role || comment?.reviewer_name || comment?.user_name || '承認者',
-  text: comment?.text || comment?.comment_text || comment?.comment || '',
-  date: formatDateTime(comment?.date || comment?.created_at)
-})
-
-const dedupeComments = (items: RejectionCommentView[]) => {
-  const unique = new Map<string, RejectionCommentView>()
-  items.forEach((item: RejectionCommentView) => {
-    unique.set(`${item.role}|${item.text}|${item.date}`, item)
-  })
-  return Array.from(unique.values())
-}
-
-const formatJstDateTimeHM = (value: string) => {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-
-  return new Intl.DateTimeFormat('ja-JP', {
-    timeZone: 'Asia/Tokyo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  }).format(date)
-}
-
-const appliedAtJst = computed(() => {
-  return formatJstDateTimeHM(String((scout.value as any).appliedAt || ''))
-})
 
 onMounted(async () => {
-  const id = Number(route.params.id)
-  const { detail, comments: rawComments } = await scoutStore.fetchApprovalDetail(id)
-  scout.value = detail
-  const normalized = (Array.isArray(rawComments) ? rawComments : []).map(normalizeComment)
-  comments.value = dedupeComments(normalized)
+  try {
+    const id = route.params.id
+    const data = await scoutStore.fetchScoutDetail(Number(id))
+    scout.value = data
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '承認詳細の取得に失敗しました'
+    alert(message)
+    router.push('/leader-list')
+  }
 })
 
 const approve = async () => {
@@ -244,19 +191,6 @@ const handleTabChange = (tab: string) => {
   width: 100%;
   margin: 0 auto;
   padding: 2rem;
-}
-
-.state-message {
-  background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
-  text-align: center;
-  color: #333;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.state-message.error {
-  color: #b71c1c;
 }
 
 .approval-layout {
@@ -383,23 +317,6 @@ const handleTabChange = (tab: string) => {
 .comment-item {
   margin-bottom: 0.5rem;
   color: #666;
-}
-
-.comment-role {
-  margin: 0 0 0.25rem;
-  font-weight: 600;
-  color: #333;
-}
-
-.comment-text {
-  margin: 0 0 0.25rem;
-  color: #444;
-}
-
-.comment-date {
-  margin: 0;
-  color: #888;
-  font-size: 0.85rem;
 }
 
 @media (max-width: 1200px) {

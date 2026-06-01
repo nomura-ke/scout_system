@@ -241,13 +241,22 @@ const dedupeComments = (items: RejectionComment[]) => {
 }
 
 onMounted(async () => {
-  const id = Number(route.params.id)
-  const { detail, comments: rawComments } = await scoutStore.fetchApprovalDetail(id)
-  scout.value = detail
-  scoutText.value = detail.scoutText || scoutText.value
-  const normalized = (Array.isArray(rawComments) ? rawComments : []).map(normalizeComment)
-  comments.value = dedupeComments(normalized)
-  console.log('👔 管理者最終承認画面を表示:', id)
+  isLoading.value = true
+  loadError.value = ''
+
+  try {
+    const id = Number(route.params.id)
+    const { detail, comments: rawComments } = await scoutStore.fetchApprovalDetail(id)
+    scout.value = detail
+    scoutText.value = detail.scoutText || scoutText.value
+    const normalized = (Array.isArray(rawComments) ? rawComments : []).map(normalizeComment)
+    comments.value = dedupeComments(normalized)
+    console.log('👔 管理者最終承認画面を表示:', id)
+  } catch (error) {
+    loadError.value = error instanceof Error ? error.message : '承認詳細の取得に失敗しました'
+  } finally {
+    isLoading.value = false
+  }
 })
 
 const approve = async () => {
