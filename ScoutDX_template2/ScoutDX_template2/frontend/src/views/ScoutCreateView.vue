@@ -19,7 +19,7 @@
             <input v-model="draftForm.companyName" type="text" class="form-input" />
           </div>
           <div class="form-group">
-            <label>職種</label>
+            <label>募集職種</label>
             <input v-model="draftForm.jobType" type="text" class="form-input" />
           </div>
           <div class="form-group">
@@ -124,8 +124,8 @@ const generateScout = async () => {
   try {
     console.log('🤖 スカウト文を生成中...')
     const result = await scoutStore.generateScout({
-      ...draftForm.value,
-      ...aiForm.value
+      ...aiForm.value,     
+      ...draftForm.value
     })
     console.log('✅ 生成完了:', result)
     alert('スカウト文を生成しました！')

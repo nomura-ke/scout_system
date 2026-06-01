@@ -42,7 +42,7 @@
               <span class="detail-value">{{ scout.companyName }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">職種</span>
+              <span class="detail-label">募集職種</span>
               <span class="detail-value">{{ scout.jobType }}</span>
             </div>
             <div class="detail-row">
@@ -84,17 +84,6 @@
               承認申請(営業リーダーへ)
             </button>
           </div>
-
-          <div v-if="showRejectionComments" class="rejection-comments">
-            <h3 class="rejection-title">差戻しコメント</h3>
-            <div v-if="rejectionComments.length > 0" class="rejection-list">
-              <div v-for="(comment, index) in rejectionComments" :key="index" class="rejection-item">
-                <p class="rejection-meta">{{ comment.role }} / {{ comment.date }}</p>
-                <p class="rejection-text">{{ comment.text }}</p>
-              </div>
-            </div>
-            <p v-else class="rejection-empty">差戻しコメントはありません</p>
-          </div>
         </div>
       </div>
     </div>
@@ -109,12 +98,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { useScoutStore } from '../stores/scoutStore' 
 import AppHeader from '../components/AppHeader.vue'      // ← 修正
 import AppFooter from '../components/AppFooter.vue' 
-
-interface RejectionCommentView {
-  role: string
-  text: string
-  date: string
-}
 
 const route = useRoute()
 const router = useRouter()
@@ -138,10 +121,8 @@ const scout = ref({
 })
 
 const scoutText = ref('Aiが生成したスカウト文')
-const rejectionComments = ref<RejectionCommentView[]>([])
 
 const isActionEnabled = computed(() => ['draft', 'rejected'].includes(scout.value.status))
-const showRejectionComments = computed(() => scout.value.status === 'rejected')
 
 const appliedAtJst = computed(() => {
   if (!scout.value.appliedAt) return ''
@@ -159,44 +140,11 @@ const appliedAtJst = computed(() => {
   }).format(date)
 })
 
-const formatDateTime = (value: unknown) => {
-  if (!value) return '-'
-  const text = String(value)
-  return text.replace('T', ' ').replace('Z', '')
-}
-
-const normalizeComment = (comment: any): RejectionCommentView => ({
-  role: comment?.role || comment?.user_role || comment?.reviewer_name || comment?.user_name || '承認者',
-  text: comment?.text || comment?.comment_text || comment?.comment || '',
-  date: formatDateTime(comment?.date || comment?.created_at)
-})
-
-const dedupeComments = (items: RejectionCommentView[]) => {
-  const unique = new Map<string, RejectionCommentView>()
-  items.forEach((item: RejectionCommentView) => {
-    unique.set(`${item.role}|${item.text}|${item.date}`, item)
-  })
-  return Array.from(unique.values())
-}
-
-const resolveRejectionComments = (data: any): RejectionCommentView[] => {
-  const mapped = Array.isArray(data?.rejectionComments) ? data.rejectionComments : []
-  if (mapped.length > 0) {
-    return dedupeComments(mapped.map(normalizeComment))
-  }
-
-  const raw = Array.isArray(data?.raw?.comments) ? data.raw.comments : []
-  return dedupeComments(raw.map(normalizeComment))
-}
-
 onMounted(async () => {
   const id = route.params.id
   const data = await scoutStore.fetchScoutDetail(Number(id))
   scout.value = data
   scoutText.value = data.scoutText
-  if (data.status === 'rejected') {
-    rejectionComments.value = resolveRejectionComments(data)
-  }
 })
 
 const handleTabChange = (tab: string) => {
@@ -325,48 +273,6 @@ const requestApproval = async () => {
   color: #f4f7fc;
   cursor: not-allowed;
   opacity: 1;
-}
-
-.rejection-comments {
-  background: #fff7f7;
-  border: 1px solid #ffd7d7;
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-}
-
-.rejection-title {
-  margin: 0 0 var(--space-3);
-  font-size: 1.05rem;
-  color: #b71c1c;
-}
-
-.rejection-list {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.rejection-item {
-  background: #ffffff;
-  border: 1px solid #ffe3e3;
-  border-radius: var(--radius-sm);
-  padding: var(--space-3);
-}
-
-.rejection-meta {
-  margin: 0 0 0.35rem;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.rejection-text {
-  margin: 0;
-  line-height: 1.6;
-  color: #333;
-}
-
-.rejection-empty {
-  margin: 0;
-  color: #666;
 }
 
 @media (max-width: 968px) {
