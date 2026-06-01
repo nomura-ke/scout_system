@@ -36,9 +36,40 @@
           </div>
         </div>
 
-        <!-- 右側：承認済み -->
+        <!-- 中央：管理者承認待ち -->
         <div class="list-section">
-          <h2 class="section-title approved">管理者承認待ち<br/>スカウト文一覧</h2>
+          <h2 class="section-title waiting-admin">管理者承認待ち<br/>スカウト文一覧</h2>
+          <div class="table-wrapper">
+            <table class="scout-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>会社名</th>
+                  <th>送信先名前</th>
+                  <th>作成者（営業担当者名）</th>
+                  <th>承認日</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="item in adminPendingList"
+                  :key="item.id"
+                  class="clickable-row"
+                >
+                  <td>{{ item.id }}</td>
+                  <td><a href="#" class="link">{{ item.companyName }}</a></td>
+                  <td>{{ item.senderName }}</td>
+                  <td>{{ item.creatorName }}</td>
+                  <td>{{ item.approvedAt }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 右側：最終承認済み -->
+        <div class="list-section">
+          <h2 class="section-title approved">最終承認済み<br/>スカウト文一覧</h2>
           <div class="table-wrapper">
             <table class="scout-table">
               <thead>
@@ -84,11 +115,13 @@ const router = useRouter()
 const scoutStore = useScoutStore()
 
 const pendingList = ref([])
+const adminPendingList = ref([])
 const approvedList = ref([])
 
 onMounted(async () => {
   const data = await scoutStore.fetchLeaderList()
   pendingList.value = data.pending
+  adminPendingList.value = data.adminPending
   approvedList.value = data.approved
 })
 
@@ -115,7 +148,7 @@ const viewDetail = (id: number) => {
 
 .list-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 2rem;
 }
 
@@ -131,6 +164,11 @@ const viewDetail = (id: number) => {
 .section-title.pending {
   color: #d32f2f;
   background-color: #ffebee;
+}
+
+.section-title.waiting-admin {
+  color: #ef6c00;
+  background-color: #fff3e0;
 }
 
 .section-title.approved {
@@ -183,6 +221,12 @@ const viewDetail = (id: number) => {
 }
 
 @media (max-width: 1200px) {
+  .list-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 900px) {
   .list-grid {
     grid-template-columns: 1fr;
   }
