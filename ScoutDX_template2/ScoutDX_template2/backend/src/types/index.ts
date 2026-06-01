@@ -195,6 +195,7 @@ export interface ScoutListItem {
   id: number;
   title: string;
   company_name: string;
+  recruitment_position?: string;
   position: string;
   seeker_name?: string;
   age_range?: string;
