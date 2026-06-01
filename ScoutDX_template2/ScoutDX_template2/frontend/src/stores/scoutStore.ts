@@ -40,19 +40,18 @@ export const useScoutStore = defineStore('scout', () => {
       id: scout.id,
       creatorName: detail?.creator?.username || '',
       appliedAt: scout.submitted_at || scout.updated_at || '',
-      leaderApprovedAt: scout.leader_approved_at || scout.approved_at || scout.updated_at || '',
-      approvedAt: scout.approved_at || scout.updated_at || '',
       senderName: '候補者',
       senderAge: '-',
       senderGender: '-',
       companyName: draft.company_name || '',
       jobType: draft.position || '',
+      aiJobType: scout.position || '',
       jobDescription: draft.business_description || '',
       requiredSkills: draft.required_skills || '',
       location: draft.work_location || '',
       salary: draft.salary || '',
       appeal: draft.job_appeal || '',
-      scoutText: scout.content || '',
+      scoutText: scout.content || detail?.aiInfo?.response || '',
       status: scout.status || '',
       raw: detail
     }
@@ -131,7 +130,7 @@ export const useScoutStore = defineStore('scout', () => {
   const generateScout = async (data: any) => {
     const draftData = {
       company_name: data.companyName,
-      position: data.jobType,
+      position: data.recruitmentJobType,
       business_description: data.jobDescription,
       required_skills: data.requiredSkills,
       work_location: data.location,

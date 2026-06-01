@@ -1,6 +1,6 @@
 <template>
   <div class="approval-container">
-    <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" @tab-change="handleTabChange" />
+    <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" :show-logout="true" @tab-change="handleTabChange" />
     
     <div class="content">
       <div v-if="isLoading" class="state-message">読み込み中...</div>
@@ -87,7 +87,7 @@
         <div class="scout-text-section">
           <h2 class="section-title">スカウト文章</h2>
           <div class="scout-text-card">
-            <p class="scout-text">{{ scout.scoutText }}</p>
+            <p class="scout-text">{{ scoutTextDisplay }}</p>
           </div>
           <div class="reason-input">
             <input
@@ -153,7 +153,8 @@ const scout = ref({
   companyName: '',
   jobType: '',
   location: '',
-  salary: ''
+  salary: '',
+  scoutText: ''
 })
 
 const rejectionReason = ref('')
@@ -199,12 +200,24 @@ const appliedAtJst = computed(() => {
   return formatJstDateTimeHM(String((scout.value as any).appliedAt || ''))
 })
 
+const scoutTextDisplay = computed(() => {
+  const value = (scout.value as any).scoutText
+  if (value) return String(value)
+  return String((scout.value as any)?.raw?.aiInfo?.response || '')
+})
+
 onMounted(async () => {
-  const id = Number(route.params.id)
-  const { detail, comments: rawComments } = await scoutStore.fetchApprovalDetail(id)
-  scout.value = detail
-  const normalized = (Array.isArray(rawComments) ? rawComments : []).map(normalizeComment)
-  comments.value = dedupeComments(normalized)
+  try {
+    const id = Number(route.params.id)
+    const { detail, comments: rawComments } = await scoutStore.fetchApprovalDetail(id)
+    scout.value = detail
+    const normalized = (Array.isArray(rawComments) ? rawComments : []).map(normalizeComment)
+    comments.value = dedupeComments(normalized)
+  } catch (e) {
+    loadError.value = e instanceof Error ? e.message : 'スカウト文詳細の取得に失敗しました'
+  } finally {
+    isLoading.value = false
+  }
 })
 
 const approve = async () => {
@@ -233,69 +246,54 @@ const handleTabChange = (tab: string) => {
 <style scoped>
 .approval-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
-  display: flex;
-  flex-direction: column;
 }
 
 .content {
-  flex: 1;
   max-width: 1600px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 2rem;
 }
 
 .state-message {
-  background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
   text-align: center;
-  color: #333;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .state-message.error {
-  color: #b71c1c;
+  color: var(--color-danger);
 }
 
 .approval-layout {
   display: grid;
   grid-template-columns: 1fr 1.2fr 0.8fr;
-  gap: 2rem;
+  gap: var(--space-7);
 }
 
 .section-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .detail-card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
 .detail-row {
   display: grid;
   grid-template-columns: 120px 1fr 40px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border);
   align-items: center;
 }
 
 .detail-label,
 .sub-label {
-  padding: 0.75rem 1rem;
-  background-color: #f5f5f5;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface-muted);
   font-weight: 500;
-  border-right: 1px solid #e0e0e0;
+  border-right: 1px solid var(--color-border);
 }
 
 .detail-value,
 .sub-value {
-  padding: 0.75rem 1rem;
+  padding: var(--space-3) var(--space-4);
 }
 
 .detail-check {
@@ -303,103 +301,99 @@ const handleTabChange = (tab: string) => {
 }
 
 .detail-group {
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .group-header {
-  padding: 0.75rem 1rem;
-  background-color: #f5f5f5;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface-muted);
   font-weight: 500;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .scout-text-card {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: var(--space-7);
   min-height: 300px;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .scout-text {
-  color: #666;
+  color: var(--color-text);
   line-height: 1.8;
-  white-space: pre-wrap; 
+  white-space: pre-wrap;
 }
 
 .reason-input {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .reason-field {
-  width: 100%;
-  padding: 1rem;
-  border: 2px solid #4caf50;
-  border-radius: 4px;
-  font-size: 1rem;
+  border-width: 1px;
+  border-color: #95c2ad;
 }
 
 .action-buttons {
   display: flex;
-  gap: 1rem;
+  gap: var(--space-4);
   justify-content: flex-end;
 }
 
 .btn-reject {
-  padding: 0.75rem 2rem;
-  background-color: #d32f2f;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  padding: var(--space-3) var(--space-7);
+  border-radius: var(--radius-sm);
   font-weight: bold;
   cursor: pointer;
 }
 
 .btn-approve {
-  padding: 0.75rem 2rem;
-  background-color: #ffc107;
-  color: #333;
-  border: none;
-  border-radius: 4px;
+  padding: var(--space-3) var(--space-7);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: #fff;
+  border: 1px solid var(--color-primary);
   font-weight: bold;
   cursor: pointer;
 }
 
+.btn-approve:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
 .comment-section {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: var(--space-6);
   height: fit-content;
 }
 
 .comment-title {
-  font-size: 1.1rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
+  font-size: var(--font-lg);
+  font-weight: 700;
+  margin: 0 0 var(--space-4);
 }
 
 .comment-item {
-  margin-bottom: 0.5rem;
-  color: #666;
+  margin-bottom: var(--space-4);
+  padding: var(--space-3);
+  background: #fff9e6;
+  border-left: 3px solid #ffc107;
+  border-radius: var(--radius-sm);
 }
 
 .comment-role {
-  margin: 0 0 0.25rem;
+  margin: 0 0 var(--space-1);
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
 }
 
 .comment-text {
-  margin: 0 0 0.25rem;
-  color: #444;
+  margin: 0 0 var(--space-1);
+  color: var(--color-text-muted);
 }
 
 .comment-date {
   margin: 0;
-  color: #888;
-  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
 }
 
 @media (max-width: 1200px) {

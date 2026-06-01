@@ -62,9 +62,7 @@ const isDraftStatus = (status: string) => {
 
 <style scoped>
 .table-wrapper {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-md);
   overflow-x: auto;
 }
 
@@ -74,57 +72,34 @@ const isDraftStatus = (status: string) => {
 }
 
 .scout-table th {
-  background-color: #f5f5f5;
-  padding: 1rem;
-  text-align: left;
+  padding: var(--space-4);
   font-weight: 600;
-  border-bottom: 2px solid #ddd;
 }
 
 .scout-table td {
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
-}
-
-.link {
-  color: #0066cc;
-  text-decoration: none;
-}
-
-.link:hover {
-  text-decoration: underline;
+  padding: var(--space-4);
 }
 
 .btn-edit {
-  padding: 0.5rem 1rem;
-  background-color: #ffc107;
-  color: #333;
-  border: none;
-  border-radius: 4px;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-weight: bold;
 }
 
 .btn-delete {
-  padding: 0.5rem 1rem;
-  background-color: #d32f2f;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-weight: bold;
 }
 
 .btn-delete:disabled {
-  background-color: #9ca3af;
-  color: #f3f4f6;
+  background-color: #9aa8bf;
+  border-color: #9aa8bf;
+  color: #f4f7fc;
   cursor: not-allowed;
   opacity: 1;
-}
-
-.btn-edit:hover,
-.btn-delete:hover {
-  opacity: 0.9;
 }
 
 .btn-delete:disabled:hover {

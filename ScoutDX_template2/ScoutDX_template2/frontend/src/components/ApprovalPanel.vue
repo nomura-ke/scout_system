@@ -26,50 +26,45 @@ defineEmits(['approve', 'reject'])
 
 <style scoped>
 .approval-panel {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: var(--space-6);
 }
 
 .panel-title {
-  font-size: 1.25rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-4);
 }
 
 .panel-content {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .panel-actions {
   display: flex;
-  gap: 1rem;
+  gap: var(--space-3);
   justify-content: flex-end;
 }
 
 .btn-reject {
-  padding: 0.75rem 2rem;
-  background-color: #d32f2f;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  padding: var(--space-3) var(--space-7);
+  border-radius: var(--radius-sm);
   font-weight: bold;
   cursor: pointer;
 }
 
 .btn-approve {
-  padding: 0.75rem 2rem;
-  background-color: #ffc107;
-  color: #333;
-  border: none;
-  border-radius: 4px;
+  padding: var(--space-3) var(--space-7);
+  border-radius: var(--radius-sm);
   font-weight: bold;
   cursor: pointer;
 }
 
-.btn-reject:hover,
+.btn-approve {
+  background: var(--color-primary);
+  color: #fff;
+  border: 1px solid var(--color-primary);
+}
+
 .btn-approve:hover {
-  opacity: 0.9;
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 </style>

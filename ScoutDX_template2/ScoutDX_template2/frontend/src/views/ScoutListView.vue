@@ -1,6 +1,6 @@
 <template>
   <div class="scout-list-container">
-    <AppHeader :tabs="['スカウト文作成', 'スカウト文一覧']" active-tab="スカウト文一覧" @tab-change="handleTabChange" />
+    <AppHeader :tabs="['スカウト文作成', 'スカウト文一覧']" active-tab="スカウト文一覧" :show-logout="true" @tab-change="handleTabChange" />
     
     <div class="content">
       <h1 class="page-title">スカウト文一覧</h1>
@@ -79,67 +79,41 @@ const handleDelete = async (id: number) => {
 <style scoped>
 .scout-list-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
-  display: flex;
-  flex-direction: column;
 }
 
 .content {
-  flex: 1;
   max-width: 1400px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 2rem;
 }
 
 .page-title {
-  font-size: 2rem;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-7);
 }
 
 .action-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .filter-section {
   display: flex;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .btn-filter {
-  padding: 0.5rem 1.5rem;
-  border: 1px solid #333;
-  background: white;
-  border-radius: 4px;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-weight: 500;
 }
 
-.btn-filter:hover {
-  background-color: #f0f0f0;
-}
-
 .btn-create {
-  padding: 0.75rem 2rem;
-  background-color: #0066cc;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  padding: var(--space-3) var(--space-7);
+  border-radius: var(--radius-sm);
   font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-create:hover {
-  background-color: #0052a3;
-}
-
-.btn-create:active {
-  transform: scale(0.98);
 }
 </style>

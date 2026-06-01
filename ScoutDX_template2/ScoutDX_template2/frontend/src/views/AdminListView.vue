@@ -1,6 +1,6 @@
 <template>
   <div class="admin-approval-view">
-    <AppHeader />
+    <AppHeader :show-logout="true" />
     
     <main class="main-content">
       <h1>スカウト文作成・承認管理アプリ</h1>
@@ -170,69 +170,54 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* スタイルはそのまま */
 .admin-approval-view {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #f5f7fa;
 }
 
 .main-content {
-  flex: 1;
-  padding: 2rem;
   max-width: 1600px;
-  margin: 0 auto;
-  width: 100%;
 }
 
 h1 {
   text-align: center;
-  font-size: 1.8rem;
-  color: #333;
-  margin-bottom: 2rem;
+  font-size: var(--font-2xl);
+  color: var(--color-text);
+  margin-bottom: var(--space-7);
   font-weight: bold;
 }
 
 .loading,
 .error {
   text-align: center;
-  padding: 3rem;
-  font-size: 1.2rem;
-}
-
-.error {
-  color: #e74c3c;
+  padding: var(--space-8);
+  font-size: var(--font-lg);
 }
 
 .two-column-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  gap: var(--space-7);
 }
 
 .column {
-  background: white;
-  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .column-title {
-  padding: 1.5rem;
+  padding: var(--space-6);
   text-align: center;
   color: white;
-  font-size: 1.3rem;
+  font-size: var(--font-lg);
   font-weight: bold;
   margin: 0;
 }
 
 .pending-title {
-  background: #e74c3c;
+  background: #cf5641;
 }
 
 .approved-title {
-  background: #3498db;
+  background: var(--color-primary);
 }
 
 .table-container {
@@ -245,31 +230,25 @@ h1 {
 }
 
 .scout-table thead {
-  background: #f8f9fa;
+  background: var(--color-surface-muted);
 }
 
 .scout-table th {
-  padding: 1rem 0.5rem;
+  padding: var(--space-4) var(--space-2);
   text-align: left;
   font-weight: bold;
-  color: #555;
-  font-size: 0.85rem;
-  border-bottom: 2px solid #ddd;
+  color: var(--color-text);
+  font-size: var(--font-sm);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .scout-table td {
-  padding: 1rem 0.5rem;
-  border-bottom: 1px solid #eee;
-  font-size: 0.9rem;
+  padding: var(--space-4) var(--space-2);
+  font-size: var(--font-sm);
 }
 
 .clickable-row {
   cursor: pointer;
-  transition: background 0.2s;
-}
-
-.clickable-row:hover {
-  background: #e3f2fd;
 }
 
 .view-only-row {
@@ -277,14 +256,14 @@ h1 {
 }
 
 .view-only-row:hover {
-  background: #f8f9fa;
+  background: var(--color-surface-muted);
 }
 
 .no-data {
   text-align: center;
-  padding: 3rem;
-  color: #999;
-  font-size: 1rem;
+  padding: var(--space-8);
+  color: var(--color-text-muted);
+  font-size: var(--font-md);
 }
 
 @media (max-width: 1200px) {
@@ -295,22 +274,22 @@ h1 {
 
 @media (max-width: 768px) {
   .main-content {
-    padding: 1rem;
+    padding: var(--space-4);
   }
 
   h1 {
-    font-size: 1.3rem;
+    font-size: var(--font-xl);
   }
 
   .column-title {
-    font-size: 1.1rem;
-    padding: 1rem;
+    font-size: var(--font-lg);
+    padding: var(--space-4);
   }
 
   .scout-table th,
   .scout-table td {
-    padding: 0.5rem 0.3rem;
-    font-size: 0.75rem;
+    padding: var(--space-2) var(--space-1);
+    font-size: var(--font-xs);
   }
 }
 </style>

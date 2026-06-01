@@ -3,6 +3,7 @@
     <AppHeader 
       :tabs="['スカウト文作成', 'スカウト文一覧']" 
       active-tab="スカウト文作成"
+      :show-logout="true"
       @tab-change="handleTabChange"
     />
     
@@ -139,63 +140,44 @@ const generateScout = async () => {
 <style scoped>
 .scout-create-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
-  display: flex;
-  flex-direction: column;
 }
 
 .content {
-  flex: 1;
   max-width: 1200px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 2rem;
 }
 
 .page-title {
-  font-size: 2rem;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-7);
 }
 
 .form-section {
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-7);
 }
 
 .section-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
-  color: #333;
+  margin-bottom: var(--space-4);
 }
 
 .form-card {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: var(--space-7);
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
   font-weight: 500;
-  color: #333;
 }
 
 .form-input,
 .form-select,
 .form-textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
+  font-size: var(--font-md);
 }
 
 .form-textarea {
@@ -206,30 +188,16 @@ const generateScout = async () => {
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .btn-generate {
   width: 100%;
-  padding: 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-lg);
   font-weight: bold;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
-}
-
-.btn-generate:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
-}
-
-.btn-generate:active {
-  transform: translateY(0);
 }
 
 @media (max-width: 768px) {

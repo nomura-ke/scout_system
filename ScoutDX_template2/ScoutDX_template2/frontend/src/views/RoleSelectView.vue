@@ -1,6 +1,6 @@
 <template>
   <div class="role-select-container">
-    <AppHeader :show-logout="true" />  <!-- ⚠️ 修正1: ケバブケースに -->
+    <AppHeader :show-logout="true" />
     <div class="role-content">
       <h1 class="role-title">ロール選択</h1>
       <div class="role-cards">
@@ -44,9 +44,6 @@ const selectRole = async (role: 'creator' | 'leader' | 'admin') => {
 <style scoped>
 .role-select-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
-  display: flex;
-  flex-direction: column;
 }
 
 .role-content {
@@ -55,18 +52,17 @@ const selectRole = async (role: 'creator' | 'leader' | 'admin') => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: var(--space-7);
 }
 
 .role-title {
-  font-size: 2rem;
   font-weight: bold;
-  margin-bottom: 3rem;
+  margin-bottom: var(--space-8);
 }
 
 .role-cards {
   display: flex;
-  gap: 2rem;
+  gap: var(--space-7);
   flex-wrap: wrap;
   justify-content: center;
 }
@@ -74,40 +70,40 @@ const selectRole = async (role: 'creator' | 'leader' | 'admin') => {
 .role-card {
   width: 280px;
   height: 150px;
-  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
-  border: 2px solid transparent;
+  border-width: 2px;
+  border-style: solid;
 }
 
 .role-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
 }
 
 .role-creator {
-  background-color: #5dade2;
-  border-color: #3498db;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary-hover);
 }
 
 .role-leader {
-  background-color: #f9e79f;
-  border-color: #f1c40f;
+  background-color: #f0b84d;
+  border-color: #d39728;
 }
 
 .role-admin {
-  background-color: #58d68d;
-  border-color: #27ae60;
+  background-color: #34a66a;
+  border-color: #238b53;
 }
 
 .role-name {
-  font-size: 1.5rem;
+  font-size: var(--font-xl);
   font-weight: bold;
   color: white;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
 .role-admin .role-name {

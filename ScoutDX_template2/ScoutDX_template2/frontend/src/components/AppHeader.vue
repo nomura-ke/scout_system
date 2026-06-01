@@ -55,9 +55,9 @@ const logout = () => {
 
 <style scoped>
 .app-header {
-  background-color: #e0e0e0;
-  border-bottom: 2px solid #ccc;
-  padding: 1rem 2rem;
+  background: linear-gradient(120deg, #ffffff 0%, #f4f8ff 100%);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-4) var(--space-6);
 }
 
 .header-content {
@@ -69,52 +69,46 @@ const logout = () => {
 }
 
 .app-title {
-  font-size: 1.5rem;
+  font-size: var(--font-xl);
   font-weight: bold;
-  color: #333;
+  color: var(--color-text);
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-3);
 }
 
 .nav-tabs {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .tab-btn {
-  padding: 0.5rem 1.5rem;
-  border: 1px solid #999;
-  background: white;
-  border-radius: 4px;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-weight: 500;
-  transition: all 0.2s;
-}
-
-.tab-btn:hover {
-  background-color: #f5f5f5;
-}
-
-.tab-btn.active {
-  background-color: #0066cc;
-  color: white;
-  border-color: #0066cc;
 }
 
 .btn-secondary {
-  padding: 0.5rem 1.5rem;
-  border: 2px solid #333;
-  background: white;
-  border-radius: 4px;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-weight: 500;
 }
 
-.btn-secondary:hover {
-  background-color: #f0f0f0;
+@media (max-width: 980px) {
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
 }
 </style>

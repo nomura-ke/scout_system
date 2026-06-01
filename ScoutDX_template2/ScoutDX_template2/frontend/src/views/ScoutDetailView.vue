@@ -1,6 +1,6 @@
 <template>
   <div class="scout-detail-container">
-    <AppHeader :tabs="['スカウト文作成', 'スカウト文一覧']" active-tab="スカウト文一覧" @tab-change="handleTabChange" />
+    <AppHeader :tabs="['スカウト文作成', 'スカウト文一覧']" active-tab="スカウト文一覧" :show-logout="true" @tab-change="handleTabChange" />
     
     <div class="content">
       <div class="detail-layout">
@@ -84,21 +84,6 @@
               承認申請(営業リーダーへ)
             </button>
           </div>
-
-          <div v-if="showRejectionComments" class="rejection-comments">
-            <h3 class="rejection-title">差戻しコメント</h3>
-            <div v-if="rejectionComments.length > 0" class="rejection-list">
-              <div
-                v-for="(comment, index) in rejectionComments"
-                :key="index"
-                class="rejection-item"
-              >
-                <p class="rejection-meta">{{ comment.role }} / {{ comment.date }}</p>
-                <p class="rejection-text">{{ comment.text }}</p>
-              </div>
-            </div>
-            <p v-else class="rejection-empty">差戻しコメントはありません</p>
-          </div>
         </div>
       </div>
     </div>
@@ -108,17 +93,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useScoutStore } from '../stores/scoutStore' 
-import AppHeader from '../components/AppHeader.vue'    
+import AppHeader from '../components/AppHeader.vue'      // ← 修正
 import AppFooter from '../components/AppFooter.vue' 
-
-interface RejectionCommentView {
-  role: string
-  text: string
-  date: string
-}
 
 const route = useRoute()
 const router = useRouter()
@@ -142,53 +121,6 @@ const scout = ref({
 })
 
 const scoutText = ref('Aiが生成したスカウト文')
-const rejectionComments = ref<RejectionCommentView[]>([])
-
-const isRejectedStatus = (status: string | undefined) => {
-  if (!status) return false
-  const normalized = String(status).toLowerCase()
-  return normalized === 'rejected' || status === '差戻し'
-}
-
-const showRejectionComments = computed(() => isRejectedStatus(scout.value.status))
-
-const formatDateTime = (value: unknown) => {
-  if (!value) return '-'
-  const text = String(value)
-  return text.replace('T', ' ').replace('Z', '')
-}
-
-const normalizeComment = (comment: any): RejectionCommentView => ({
-  role: comment?.role || comment?.user_role || comment?.reviewer_name || comment?.user_name || '承認者',
-  text: comment?.text || comment?.comment_text || comment?.comment || '',
-  date: formatDateTime(comment?.date || comment?.created_at)
-})
-
-const resolveRejectionComments = (data: any): RejectionCommentView[] => {
-  const mappedComments = Array.isArray(data?.rejectionComments) ? data.rejectionComments : []
-  if (mappedComments.length > 0) {
-    const normalized = mappedComments.map(normalizeComment)
-    const unique = new Map<string, RejectionCommentView>()
-    normalized.forEach((item: RejectionCommentView) => {
-      unique.set(`${item.role}|${item.text}|${item.date}`, item)
-    })
-    return Array.from(unique.values())
-  }
-
-  const rawComments = Array.isArray(data?.comments)
-    ? data.comments
-    : Array.isArray(data?.raw?.comments)
-      ? data.raw.comments
-      : []
-
-  const normalized = rawComments.map(normalizeComment)
-  const unique = new Map<string, RejectionCommentView>()
-  normalized.forEach((item: RejectionCommentView) => {
-    unique.set(`${item.role}|${item.text}|${item.date}`, item)
-  })
-
-  return Array.from(unique.values())
-}
 
 const isActionEnabled = computed(() => ['draft', 'rejected'].includes(scout.value.status))
 
@@ -197,10 +129,6 @@ onMounted(async () => {
   const data = await scoutStore.fetchScoutDetail(Number(id))
   scout.value = data
   scoutText.value = data.scoutText
-
-  if (isRejectedStatus(data.status)) {
-    rejectionComments.value = resolveRejectionComments(data)
-  }
 })
 
 const handleTabChange = (tab: string) => {
@@ -237,67 +165,55 @@ const requestApproval = async () => {
 <style scoped>
 .scout-detail-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
-  display: flex;
-  flex-direction: column;
 }
 
 .content {
-  flex: 1;
   max-width: 1400px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 2rem;
 }
 
 .detail-layout {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
-  gap: 2rem;
+  gap: var(--space-7);
 }
 
 .section-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .detail-card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
 .detail-row {
   display: grid;
   grid-template-columns: 140px 1fr;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .detail-label,
 .sub-label {
-  padding: 0.75rem 1rem;
-  background-color: #f5f5f5;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface-muted);
   font-weight: 500;
-  border-right: 1px solid #e0e0e0;
+  border-right: 1px solid var(--color-border);
 }
 
 .detail-value,
 .sub-value {
-  padding: 0.75rem 1rem;
+  padding: var(--space-3) var(--space-4);
 }
 
 .detail-group {
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .detail-group .detail-label {
   display: block;
-  padding: 0.75rem 1rem;
-  background-color: #f5f5f5;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface-muted);
   font-weight: 500;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .detail-sub {
@@ -305,94 +221,42 @@ const requestApproval = async () => {
 }
 
 .scout-text-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.5rem;
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
 }
 
 .scout-textarea {
-  width: 100%;
   min-height: 400px;
-  padding: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
   resize: vertical;
 }
 
 .action-buttons {
   display: flex;
-  gap: 1rem;
+  gap: var(--space-4);
   justify-content: flex-end;
 }
 
 .btn-save {
-  padding: 0.75rem 2rem;
-  background-color: #0066cc;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  padding: var(--space-3) var(--space-7);
+  border-radius: var(--radius-sm);
   font-weight: bold;
   cursor: pointer;
 }
 
 .btn-approval {
-  padding: 0.75rem 2rem;
-  background-color: #0066cc;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  padding: var(--space-3) var(--space-7);
+  border-radius: var(--radius-sm);
   font-weight: bold;
   cursor: pointer;
 }
 
-.btn-save:hover,
-.btn-approval:hover {
-  opacity: 0.9;
-}
-
-.rejection-comments {
-  background: #fff7f7;
-  border: 1px solid #ffd7d7;
-  border-radius: 8px;
-  padding: 1rem;
-}
-
-.rejection-title {
-  margin: 0 0 0.75rem;
-  font-size: 1.1rem;
-  color: #b71c1c;
-}
-
-.rejection-list {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.rejection-item {
-  background: #ffffff;
-  border: 1px solid #ffe3e3;
-  border-radius: 6px;
-  padding: 0.75rem;
-}
-
-.rejection-meta {
-  margin: 0 0 0.35rem;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.rejection-text {
-  margin: 0;
-  line-height: 1.6;
-  color: #333;
-}
-
-.rejection-empty {
-  margin: 0;
-  color: #666;
+.btn-save:disabled,
+.btn-approval:disabled {
+  background-color: #9aa8bf;
+  border-color: #9aa8bf;
+  color: #f4f7fc;
+  cursor: not-allowed;
+  opacity: 1;
 }
 
 @media (max-width: 968px) {

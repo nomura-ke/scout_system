@@ -1,6 +1,6 @@
 <template>
   <div class="approval-container">
-     <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" @tab-change="adminListChange" />
+    <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" :show-logout="true" @tab-change="adminListChange" />
     
     
     <!-- 管理者バナー -->
@@ -241,13 +241,19 @@ const dedupeComments = (items: RejectionComment[]) => {
 }
 
 onMounted(async () => {
-  const id = Number(route.params.id)
-  const { detail, comments: rawComments } = await scoutStore.fetchApprovalDetail(id)
-  scout.value = detail
-  scoutText.value = detail.scoutText || scoutText.value
-  const normalized = (Array.isArray(rawComments) ? rawComments : []).map(normalizeComment)
-  comments.value = dedupeComments(normalized)
-  console.log('👔 管理者最終承認画面を表示:', id)
+  try {
+    const id = Number(route.params.id)
+    const { detail, comments: rawComments } = await scoutStore.fetchApprovalDetail(id)
+    scout.value = detail
+    scoutText.value = detail.scoutText || detail?.raw?.aiInfo?.response || ''
+    const normalized = (Array.isArray(rawComments) ? rawComments : []).map(normalizeComment)
+    comments.value = dedupeComments(normalized)
+    console.log('👔 管理者最終承認画面を表示:', id)
+  } catch (e) {
+    loadError.value = e instanceof Error ? e.message : 'スカウト文詳細の取得に失敗しました'
+  } finally {
+    isLoading.value = false
+  }
 })
 
 const approve = async () => {
@@ -282,108 +288,93 @@ const adminListChange= (tab: string) => {
 <style scoped>
 .approval-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
-  display: flex;
-  flex-direction: column;
 }
 
 .admin-banner {
-  background: linear-gradient(135deg, #58d68d 0%, #27ae60 100%);
-  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #43b177 0%, #238b53 100%);
+  padding: var(--space-4) var(--space-6);
   display: flex;
   align-items: center;
-  gap: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  gap: var(--space-4);
+  box-shadow: var(--shadow-sm);
 }
 
 .admin-badge {
   color: white;
   font-weight: bold;
-  font-size: 1.2rem;
+  font-size: var(--font-lg);
 }
 
 .status-badge {
   background: white;
-  color: #27ae60;
-  padding: 0.25rem 0.75rem;
+  color: var(--color-success);
+  padding: var(--space-1) var(--space-3);
   border-radius: 20px;
-  font-size: 0.9rem;
+  font-size: var(--font-sm);
   font-weight: bold;
 }
 
 .content {
-  flex: 1;
   max-width: 1600px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 2rem;
 }
 
 .state-message {
-  background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
   text-align: center;
-  color: #333;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .state-message.error {
-  color: #b71c1c;
+  color: var(--color-danger);
 }
 
 .approval-layout {
   display: grid;
   grid-template-columns: 1fr 1.2fr 0.8fr;
-  gap: 2rem;
+  gap: var(--space-7);
 }
 
 .section-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .detail-card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
 .detail-row {
   display: grid;
   grid-template-columns: 120px 1fr 40px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border);
   align-items: center;
 }
 
 .detail-row.highlight {
   grid-template-columns: 120px 1fr;
-  background-color: #e8f5e9;
+  background-color: var(--color-success-soft);
 }
 
 .detail-label,
 .sub-label {
-  padding: 0.75rem 1rem;
-  background-color: #f5f5f5;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface-muted);
   font-weight: 500;
-  border-right: 1px solid #e0e0e0;
+  border-right: 1px solid var(--color-border);
 }
 
 .detail-value,
 .sub-value {
-  padding: 0.75rem 1rem;
+  padding: var(--space-3) var(--space-4);
 }
 
 .detail-value.approved {
-  color: #27ae60;
+  color: var(--color-success);
   font-weight: bold;
 }
 
 .approved-mark {
-  color: #27ae60;
-  font-size: 1.2rem;
+  color: var(--color-success);
+  font-size: var(--font-lg);
   font-weight: bold;
   margin: 0 auto;
 }
@@ -393,189 +384,162 @@ const adminListChange= (tab: string) => {
 }
 
 .detail-group {
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .group-header {
-  padding: 0.75rem 1rem;
-  background-color: #f5f5f5;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface-muted);
   font-weight: 500;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .scout-text-card {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: var(--space-7);
   min-height: 300px;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .scout-text {
-  color: #333;
+  color: var(--color-text);
   line-height: 1.8;
   white-space: pre-wrap;
 }
 
 .reason-input {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .reason-label {
   display: block;
   font-weight: 500;
-  margin-bottom: 0.5rem;
-  color: #333;
+  margin-bottom: var(--space-2);
+  color: var(--color-text);
 }
 
 .reason-field {
-  width: 100%;
-  padding: 1rem;
-  border: 2px solid #f44336;
-  border-radius: 4px;
-  font-size: 1rem;
+  border-color: #e3a29f;
 }
 
 .reason-field:focus {
-  outline: none;
-  border-color: #d32f2f;
+  border-color: var(--color-danger);
 }
 
 .action-buttons {
   display: flex;
-  gap: 1rem;
+  gap: var(--space-4);
   justify-content: flex-end;
 }
 
 .btn-reject {
-  padding: 0.75rem 2rem;
-  background-color: #d32f2f;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  padding: var(--space-3) var(--space-7);
+  border-radius: var(--radius-sm);
   font-weight: bold;
   cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-reject:hover {
-  background-color: #b71c1c;
-  transform: translateY(-2px);
 }
 
 .btn-final-approve {
-  padding: 0.75rem 2rem;
-  background: linear-gradient(135deg, #58d68d 0%, #27ae60 100%);
+  padding: var(--space-3) var(--space-7);
+  background: linear-gradient(135deg, #43b177 0%, #238b53 100%);
   color: white;
-  border: none;
-  border-radius: 4px;
+  border: 1px solid #238b53;
+  border-radius: var(--radius-sm);
   font-weight: bold;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+  box-shadow: 0 2px 8px rgba(35, 139, 83, 0.25);
 }
 
 .btn-final-approve:hover {
-  background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+  background: linear-gradient(135deg, #2f9e62 0%, #1c7445 100%);
 }
 
 .comment-section {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: var(--space-6);
   height: fit-content;
 }
 
 .comment-title {
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   font-weight: bold;
-  margin-bottom: 1rem;
-  color: #333;
+  margin-bottom: var(--space-4);
+  color: var(--color-text);
 }
 
 .comment-title.mt-3 {
-  margin-top: 2rem;
+  margin-top: var(--space-7);
 }
 
 .history-item {
-  background: #e8f5e9;
-  padding: 1rem;
-  border-radius: 8px;
-  border-left: 4px solid #27ae60;
-  margin-bottom: 1rem;
+  background: var(--color-success-soft);
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+  border-left: 4px solid var(--color-success);
+  margin-bottom: var(--space-4);
 }
 
 .history-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
 }
 
 .history-role {
   font-weight: bold;
-  color: #333;
+  color: var(--color-text);
 }
 
 .history-status {
-  padding: 0.25rem 0.75rem;
+  padding: var(--space-1) var(--space-3);
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: var(--font-sm);
   font-weight: bold;
 }
 
 .history-status.approved {
-  background: #27ae60;
+  background: var(--color-success);
   color: white;
 }
 
 .history-body {
-  font-size: 0.9rem;
-  color: #666;
+  font-size: var(--font-sm);
 }
 
 .history-approver {
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--space-1);
 }
 
 .history-date {
-  font-size: 0.85rem;
-  color: #999;
+  font-size: var(--font-sm);
 }
 
 .comment-item {
-  margin-bottom: 1rem;
-  padding: 0.75rem;
+  margin-bottom: var(--space-4);
+  padding: var(--space-3);
   background: #fff9e6;
   border-left: 3px solid #ffc107;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .comment-role {
   font-weight: bold;
   color: #f57c00;
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--space-1);
 }
 
 .comment-text {
-  color: #666;
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--space-1);
 }
 
 .comment-date {
-  font-size: 0.85rem;
-  color: #999;
+  font-size: var(--font-sm);
 }
 
 .no-comment {
-  color: #999;
+  color: var(--color-text-muted);
   font-style: italic;
   text-align: center;
-  padding: 1rem;
+  padding: var(--space-4);
 }
 
 @media (max-width: 1200px) {

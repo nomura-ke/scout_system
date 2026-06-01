@@ -6,14 +6,14 @@
 
 <style scoped>
 .app-footer {
-  background-color: #e0e0e0;
-  border-top: 2px solid #ccc;
-  padding: 1rem;
+  background: linear-gradient(120deg, #ffffff 0%, #f6f9ff 100%);
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-4);
   text-align: center;
 }
 
 .footer-text {
-  color: #666;
-  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
 }
 </style>

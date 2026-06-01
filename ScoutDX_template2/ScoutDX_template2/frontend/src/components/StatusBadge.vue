@@ -33,30 +33,38 @@ const statusText = computed(() => props.status)
 
 <style scoped>
 .status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: var(--font-sm);
+  font-weight: 700;
   white-space: nowrap;
 }
 
 .status-editing {
-  background-color: #e3f2fd;
-  color: #1976d2;
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-color: #b5d3f6;
 }
 
 .status-pending {
-  background-color: #fff3e0;
-  color: #f57c00;
+  background-color: var(--color-warning-soft);
+  color: var(--color-warning);
+  border-color: #f4d699;
 }
 
 .status-approved {
-  background-color: #e8f5e9;
-  color: #388e3c;
+  background-color: var(--color-success-soft);
+  color: var(--color-success);
+  border-color: #bde6cb;
 }
 
 .status-rejected {
-  background-color: #ffebee;
-  color: #d32f2f;
+  background-color: var(--color-danger-soft);
+  color: var(--color-danger);
+  border-color: #f1c4c2;
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <div class="leader-list-container">
-    <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" />
+    <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" :show-logout="true" />
     
     <div class="content">
       <div class="list-grid">
@@ -20,7 +20,7 @@
               </thead>
               <tbody>
                 <tr
-                  v-for="item in pendingList"
+                  v-for="item in pendingRows"
                   :key="item.id"
                   @click="viewDetail(item.id)"
                   class="clickable-row"
@@ -52,7 +52,7 @@
               </thead>
               <tbody>
                 <tr
-                  v-for="item in approvedList"
+                  v-for="item in approvedRows"
                   :key="item.id"
                   class="clickable-row"
                 >
@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useScoutStore } from '../stores/scoutStore'
 import AppHeader from '../components/AppHeader.vue'
@@ -83,8 +83,10 @@ import AppFooter from '../components/AppFooter.vue'
 const router = useRouter()
 const scoutStore = useScoutStore()
 
-const pendingList = ref([])
-const approvedList = ref([])
+const pendingList = ref<any[]>([])
+const approvedList = ref<any[]>([])
+const pendingRows = computed<any[]>(() => pendingList.value)
+const approvedRows = computed<any[]>(() => approvedList.value)
 
 onMounted(async () => {
   const data = await scoutStore.fetchLeaderList()
@@ -100,48 +102,37 @@ const viewDetail = (id: number) => {
 <style scoped>
 .leader-list-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
-  display: flex;
-  flex-direction: column;
 }
 
 .content {
-  flex: 1;
   max-width: 1600px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 2rem;
 }
 
 .list-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  gap: var(--space-7);
 }
 
 .section-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
   text-align: center;
-  padding: 1rem;
-  border-radius: 8px;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
 }
 
 .section-title.pending {
-  color: #d32f2f;
-  background-color: #ffebee;
+  color: var(--color-danger);
+  background-color: var(--color-danger-soft);
 }
 
 .section-title.approved {
-  color: #1976d2;
-  background-color: #e3f2fd;
+  color: var(--color-primary);
+  background-color: var(--color-primary-soft);
 }
 
 .table-wrapper {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -151,35 +142,17 @@ const viewDetail = (id: number) => {
 }
 
 .scout-table th {
-  background-color: #f5f5f5;
-  padding: 0.75rem;
-  text-align: left;
+  padding: var(--space-3);
   font-weight: 600;
-  border-bottom: 2px solid #ddd;
-  font-size: 0.9rem;
+  font-size: var(--font-sm);
 }
 
 .scout-table td {
-  padding: 0.75rem;
-  border-bottom: 1px solid #eee;
+  padding: var(--space-3);
 }
 
 .clickable-row {
   cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.clickable-row:hover {
-  background-color: #f9f9f9;
-}
-
-.link {
-  color: #0066cc;
-  text-decoration: none;
-}
-
-.link:hover {
-  text-decoration: underline;
 }
 
 @media (max-width: 1200px) {

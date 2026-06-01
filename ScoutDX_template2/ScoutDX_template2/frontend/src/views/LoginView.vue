@@ -80,9 +80,6 @@ console.log('LoginView がマウントされました')
 <style scoped>
 .login-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
-  display: flex;
-  flex-direction: column;
 }
 
 .login-content {
@@ -91,67 +88,47 @@ console.log('LoginView がマウントされました')
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: var(--space-7);
 }
 
 .login-title {
-  font-size: 2rem;
   font-weight: bold;
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-7);
 }
 
 .login-card {
-  background: white;
-  padding: 3rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: var(--space-8);
   width: 100%;
   max-width: 500px;
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
   font-weight: 500;
 }
 
 .form-input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
+  font-size: var(--font-md);
 }
 
 .error-message {
-  color: #d32f2f;
-  margin-top: -0.5rem;
-  margin-bottom: 0.75rem;
-  font-size: 0.9rem;
+  margin-top: calc(var(--space-2) * -1);
+  margin-bottom: var(--space-3);
+  font-size: var(--font-sm);
 }
 
 .btn-primary {
   width: 100%;
-  padding: 1rem;
-  background-color: #0066cc;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-md);
   font-weight: bold;
   cursor: pointer;
-  margin-top: 1rem;
-}
-
-.btn-primary:hover {
-  background-color: #0052a3;
-}
-
-.btn-primary:active {
-  transform: scale(0.98);
+  margin-top: var(--space-4);
 }
 </style>
