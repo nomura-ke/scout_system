@@ -712,7 +712,13 @@ export const findApprovalHistory = async (documentId: number): Promise<ApprovalH
       ah.created_at
     FROM approval_history ah
     LEFT JOIN users u ON ah.user_id = u.id
-    LEFT JOIN sessions s ON ah.user_id = s.user_id
+    LEFT JOIN LATERAL (
+      SELECT current_user_role
+      FROM sessions
+      WHERE user_id = ah.user_id
+      ORDER BY created_at DESC
+      LIMIT 1
+    ) s ON true
     WHERE ah.document_id = $1
     ORDER BY ah.created_at ASC
   `;
@@ -754,7 +760,13 @@ export const findRejectionComments = async (documentId: number): Promise<Rejecti
       rc.created_at
     FROM rejection_comments rc
     LEFT JOIN users u ON rc.user_id = u.id
-    LEFT JOIN sessions s ON rc.user_id = s.user_id
+    LEFT JOIN LATERAL (
+      SELECT current_user_role
+      FROM sessions
+      WHERE user_id = rc.user_id
+      ORDER BY created_at DESC
+      LIMIT 1
+    ) s ON true
     WHERE rc.document_id = $1
     ORDER BY rc.created_at DESC
   `;

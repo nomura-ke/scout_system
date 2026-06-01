@@ -39,6 +39,15 @@ export const scoutService = {
       }
     }
 
+    // 差戻し時のみコメントを付与する
+    if (detail.scout.status === 'rejected') {
+      const comments = await db.findRejectionComments(scoutId);
+      return {
+        ...detail,
+        comments
+      };
+    }
+
     return detail;
   },
 

@@ -184,6 +184,7 @@ export interface ScoutDetailResponse {
     id: number;
     username: string;
   };
+  comments?: RejectionComment[];
 }
 
 /**
