@@ -18,7 +18,7 @@
             </div>
             <div class="detail-row">
               <span class="detail-label">申請日時</span>
-              <span class="detail-value">{{ scout.appliedAt }}</span>
+              <span class="detail-value">{{ appliedAtJst }}</span>
             </div>
             <div class="detail-group">
               <span class="detail-label">送信者情報</span>
@@ -123,6 +123,22 @@ const scout = ref({
 const scoutText = ref('Aiが生成したスカウト文')
 
 const isActionEnabled = computed(() => ['draft', 'rejected'].includes(scout.value.status))
+
+const appliedAtJst = computed(() => {
+  if (!scout.value.appliedAt) return ''
+  const date = new Date(scout.value.appliedAt)
+  if (Number.isNaN(date.getTime())) return ''
+
+  return new Intl.DateTimeFormat('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).format(date)
+})
 
 onMounted(async () => {
   const id = route.params.id

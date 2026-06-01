@@ -37,6 +37,22 @@ const scoutStore = useScoutStore()
 
 const scoutList = ref([])
 
+const formatJstDateTimeHM = (value?: string) => {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+
+  return new Intl.DateTimeFormat('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).format(date)
+}
+
 const columns = [
   { key: 'id', label: 'ID' },
   { key: 'jobSeeker', label: '求職者' },
@@ -46,7 +62,11 @@ const columns = [
 ]
 
 onMounted(async () => {
-  scoutList.value = await scoutStore.fetchScoutList()
+  const data = await scoutStore.fetchScoutList()
+  scoutList.value = data.map((item: any) => ({
+    ...item,
+    createdAt: formatJstDateTimeHM(item.createdAt)
+  }))
 })
 
 // タブ切り替え
@@ -71,7 +91,11 @@ const handleEdit = (id: number) => {
 const handleDelete = async (id: number) => {
   if (confirm('削除してもよろしいですか？')) {
     await scoutStore.deleteScout(id)
-    scoutList.value = await scoutStore.fetchScoutList()
+    const data = await scoutStore.fetchScoutList()
+    scoutList.value = data.map((item: any) => ({
+      ...item,
+      createdAt: formatJstDateTimeHM(item.createdAt)
+    }))
   }
 }
 </script>

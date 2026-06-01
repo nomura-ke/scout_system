@@ -123,7 +123,7 @@
               </div>
               <div class="history-body">
                 <p class="history-approver">承認者: {{ scout.leaderApproverName }}</p>
-                <p class="history-date">{{ leaderApprovalDate }}</p>
+                <p class="history-date">{{ leaderApprovalDateJst }}</p>
               </div>
             </div>
 
@@ -221,9 +221,8 @@ const comments = ref<RejectionComment[]>([
 ])
 
 const formatDateTime = (value: unknown) => {
-  if (!value) return '-'
-  const text = String(value)
-  return text.replace('T', ' ').replace('Z', '')
+  const formatted = formatJstDateTimeHM(String(value || ''))
+  return formatted || '-'
 }
 
 const normalizeComment = (comment: any): RejectionComment => ({
