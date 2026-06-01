@@ -35,11 +35,17 @@ export const useScoutStore = defineStore('scout', () => {
   const mapDetail = (detail: any) => {
     const scout = detail?.scout || {}
     const draft = detail?.draft || {}
+    const approvalHistory = Array.isArray(detail?.approvalHistory) ? detail.approvalHistory : []
+    const leaderApproval = [...approvalHistory]
+      .reverse()
+      .find((item: any) => item?.action === 'APPROVED_LEADER')
 
     return {
       id: scout.id,
       creatorName: detail?.creator?.username || '',
       appliedAt: scout.submitted_at || scout.updated_at || '',
+      leaderApprovedAt: leaderApproval?.created_at || scout.approved_at || '',
+      leaderApproverName: leaderApproval?.user_name || '',
       senderName: '候補者',
       senderAge: '-',
       senderGender: '-',
