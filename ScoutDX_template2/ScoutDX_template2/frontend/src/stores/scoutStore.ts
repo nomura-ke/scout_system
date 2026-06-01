@@ -51,6 +51,7 @@ export const useScoutStore = defineStore('scout', () => {
   const mapListItem = (item: any) => ({
     id: item.id,
     jobSeeker: parseSeekerName(item),
+    recruitmentPosition: item.position || '-',
     senderAge: item.age_range || '-',
     senderGender: item.gender || '-',
     companyName: item.company_name || '-',
@@ -155,9 +156,11 @@ export const useScoutStore = defineStore('scout', () => {
   const fetchScoutDetail = async (id: number) => fetchScoutById(id)
 
   const generateScout = async (data: any) => {
+    const recruitmentPosition = data.recruitmentPosition || data.jobType || ''
+
     const draftData = {
       company_name: data.companyName,
-      position: data.jobType,
+      position: recruitmentPosition,
       business_description: data.jobDescription,
       required_skills: data.requiredSkills,
       work_location: data.location,
@@ -170,7 +173,7 @@ export const useScoutStore = defineStore('scout', () => {
       seeker_name: data.seekerName || '',
       age_range: data.age || '指定なし',
       gender: data.gender || '指定なし',
-      position: data.jobType,
+      position: data.preferredPosition || recruitmentPosition,
       salary: data.salary,
       ng_words: data.ngWords || ''
     }

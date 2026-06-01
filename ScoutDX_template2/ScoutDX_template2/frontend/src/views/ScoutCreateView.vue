@@ -9,17 +9,17 @@
     <div class="content">
       <h1 class="page-title">スカウト文作成</h1>
 
-      <!-- 下書き入力フォーム -->
+      <!-- ドラフト入力フォーム -->
       <div class="form-section">
-        <h2 class="section-title">下書き入力</h2>
+        <h2 class="section-title">ドラフト入力</h2>
         <div class="form-card">
           <div class="form-group">
             <label>会社名</label>
             <input v-model="draftForm.companyName" type="text" class="form-input" />
           </div>
           <div class="form-group">
-            <label>職種</label>
-            <input v-model="draftForm.jobType" type="text" class="form-input" />
+            <label>募集職種</label>
+            <input v-model="draftForm.recruitmentPosition" type="text" class="form-input" />
           </div>
           <div class="form-group">
             <label>業務内容</label>
@@ -69,7 +69,7 @@
           </div>
           <div class="form-group">
             <label>職種</label>
-            <input v-model="aiForm.jobType" type="text" class="form-input" />
+            <input v-model="aiForm.preferredPosition" type="text" class="form-input" />
           </div>
           <div class="form-group">
             <label>NGワード（カンマ区切り）</label>
@@ -98,7 +98,7 @@ const scoutStore = useScoutStore()
 
 const draftForm = ref({
   companyName: '',
-  jobType: '',
+  recruitmentPosition: '',
   jobDescription: '',
   requiredSkills: '',
   location: '',
@@ -110,7 +110,7 @@ const aiForm = ref({
   seekerName: '',
   age: '',
   gender: '',
-  jobType: '',
+  preferredPosition: '',
   ngWords: ''
 })
 
@@ -133,7 +133,11 @@ const generateScout = async () => {
     console.log('🤖 スカウト文を生成中...')
     const result = await scoutStore.generateScout({
       ...draftForm.value,
-      ...aiForm.value
+      seekerName: aiForm.value.seekerName,
+      age: aiForm.value.age,
+      gender: aiForm.value.gender,
+      preferredPosition: aiForm.value.preferredPosition,
+      ngWords: aiForm.value.ngWords
     })
     console.log('✅ 生成完了:', result)
     alert('スカウト文を生成しました！')
