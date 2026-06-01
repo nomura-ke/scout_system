@@ -51,12 +51,12 @@
         <div class="form-card">
           <div class="form-row">
             <div class="form-group">
-              <label>年齢</label>
-              <input v-model="aiForm.age" type="text" class="form-input" />
+              <label>年齢 <span style="color: red">*</span></label>
+              <input v-model="aiForm.age" type="text" class="form-input" required />
             </div>
-            <div class="form-group">
-              <label>性別</label>
-              <select v-model="aiForm.gender" class="form-select">
+           <div class="form-group">
+              <label>性別 <span style="color: red">*</span></label>
+              <select v-model="aiForm.gender" class="form-select" required>
                 <option value="">選択してください</option>
                 <option value="男">男</option>
                 <option value="女">女</option>
@@ -65,8 +65,8 @@
             </div>
           </div>
           <div class="form-group">
-            <label>職種</label>
-            <input v-model="aiForm.jobType" type="text" class="form-input" />
+           <label>職種 <span style="color: red">*</span></label>
+            <input v-model="aiForm.jobType" type="text" class="form-input" required />
           </div>
           <div class="form-group">
             <label>追加NGワード（カンマ区切り）</label>
