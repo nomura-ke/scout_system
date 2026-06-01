@@ -3,7 +3,9 @@
     <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" @tab-change="handleTabChange" />
     
     <div class="content">
-      <div class="approval-layout">
+      <div v-if="isLoading" class="state-message">読み込み中...</div>
+      <div v-else-if="loadError" class="state-message error">{{ loadError }}</div>
+      <div v-else class="approval-layout">
         <!-- 左側：スカウト文詳細 -->
         <div class="detail-section">
           <h2 class="section-title">スカウト文詳細</h2>
@@ -20,7 +22,7 @@
             </div>
             <div class="detail-row">
               <span class="detail-label">申請日時</span>
-              <span class="detail-value">{{ scout.appliedAt }}</span>
+              <span class="detail-value">{{ appliedAtJst }}</span>
               <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-group">
@@ -117,7 +119,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useScoutStore } from '../stores/scoutStore' 
 import AppHeader from '../components/AppHeader.vue'
@@ -126,26 +128,63 @@ import AppFooter from '../components/AppFooter.vue'
 const route = useRoute()
 const router = useRouter()
 const scoutStore = useScoutStore()
+const isLoading = ref(true)
+const loadError = ref('')
 
 const scout = ref({
-  id: 1,
-  creatorName: '賀上',
-  appliedAt: '2025-09-15 23:47:43',
-  senderName: '山田太郎',
-  senderAge: 23,
-  senderGender: '男',
-  companyName: '(株)トラスト',
-  jobType: 'エンジニア',
-  location: '東京都港区',
-  salary: '600万円~'
+  id: 0,
+  creatorName: '',
+  appliedAt: '',
+  senderName: '',
+  senderAge: '',
+  senderGender: '',
+  companyName: '',
+  jobType: '',
+  location: '',
+  salary: ''
 })
 
 const rejectionReason = ref('')
 
+const formatJstDateTimeHM = (value: string) => {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+
+  return new Intl.DateTimeFormat('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).format(date)
+}
+
+const appliedAtJst = computed(() => {
+  return formatJstDateTimeHM(String((scout.value as any).appliedAt || ''))
+})
+
 onMounted(async () => {
-  const id = route.params.id
-  const data = await scoutStore.fetchScoutDetail(Number(id))
-  scout.value = data
+  const id = Number(route.params.id)
+  if (!Number.isFinite(id) || id <= 0) {
+    loadError.value = '不正なIDです'
+    isLoading.value = false
+    return
+  }
+
+  try {
+    const data = await scoutStore.fetchScoutDetail(id)
+    scout.value = {
+      ...scout.value,
+      ...data
+    }
+  } catch (e) {
+    loadError.value = e instanceof Error ? e.message : 'データ取得に失敗しました'
+  } finally {
+    isLoading.value = false
+  }
 })
 
 const approve = async () => {
@@ -185,6 +224,19 @@ const handleTabChange = (tab: string) => {
   width: 100%;
   margin: 0 auto;
   padding: 2rem;
+}
+
+.state-message {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.state-message.error {
+  color: #b71c1c;
 }
 
 .approval-layout {

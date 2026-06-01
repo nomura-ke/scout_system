@@ -10,7 +10,9 @@
     </div>
     
     <div class="content">
-      <div class="approval-layout">
+      <div v-if="isLoading" class="state-message">読み込み中...</div>
+      <div v-else-if="loadError" class="state-message error">{{ loadError }}</div>
+      <div v-else class="approval-layout">
         <!-- 左側：スカウト文詳細 -->
         <div class="detail-section">
           <h2 class="section-title">スカウト文詳細</h2>
@@ -18,21 +20,18 @@
             <div class="detail-row">
               <span class="detail-label">ID</span>
               <span class="detail-value">{{ scout.id }}</span>
-              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">作成者名前</span>
               <span class="detail-value">{{ scout.creatorName }}</span>
-              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">申請日時</span>
-              <span class="detail-value">{{ scout.appliedAt }}</span>
-              <input type="checkbox" class="detail-check" />
+              <span class="detail-value">{{ appliedAtJst }}</span>
             </div>
-            <div class="detail-row highlight">
+            <div class="detail-row">
               <span class="detail-label">営業リーダー承認日</span>
-              <span class="detail-value approved">{{ leaderApprovalDate }}</span>
+              <span class="detail-value">{{ leaderApprovalDateJst }}</span>
             </div>
             <div class="detail-group">
               <div class="group-header">
@@ -162,32 +161,58 @@ interface RejectionComment {
 const route = useRoute()
 const router = useRouter()
 const scoutStore = useScoutStore()
+const isLoading = ref(true)
+const loadError = ref('')
 
 const scout = ref({
-  id: 1,
-  creatorName: '賀上',
-  appliedAt: '2025-09-15 23:47:43',
-  leaderApprovedAt: '2025-09-16 10:23:15',
-  leaderApproverName: '田中リーダー',
-  senderName: '山田太郎',
-  senderAge: 23,
-  senderGender: '男',
-  companyName: '(株)トラスト',
-  jobType: 'エンジニア',
-  jobDescription: 'Webアプリケーション開発',
-  requiredSkills: 'Vue.js, TypeScript',
-  location: '東京都港区',
-  salary: '600万円~',
-  appeal: '最新技術を使った開発環境'
+  id: 0,
+  creatorName: '',
+  appliedAt: '',
+  leaderApprovedAt: '',
+  leaderApproverName: '',
+  senderName: '',
+  senderAge: '',
+  senderGender: '',
+  companyName: '',
+  jobType: '',
+  jobDescription: '',
+  requiredSkills: '',
+  location: '',
+  salary: '',
+  appeal: ''
 })
 
-const scoutText = ref('Aiが生成したスカウト文です。\n\n山田太郎様\n\nこんにちは！株式会社トラストの採用担当です。\n\nあなたのVue.jsとTypeScriptのスキルに注目しました。')
+const scoutText = ref('')
 
 const rejectionReason = ref('')
 
 const leaderApprovalDate = computed(() => {
   const s = scout.value as any
-  return s.leaderApprovedAt || s.approvedAt || '未承認'
+  return s.leaderApprovedAt || s.approvedAt || ''
+})
+
+const formatJstDateTimeHM = (value: string) => {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+
+  return new Intl.DateTimeFormat('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).format(date)
+}
+
+const appliedAtJst = computed(() => {
+  return formatJstDateTimeHM(String((scout.value as any).appliedAt || ''))
+})
+
+const leaderApprovalDateJst = computed(() => {
+  return formatJstDateTimeHM(String(leaderApprovalDate.value || ''))
 })
 
 const comments = ref<RejectionComment[]>([
@@ -196,11 +221,27 @@ const comments = ref<RejectionComment[]>([
 ])
 
 onMounted(async () => {
-  const id = route.params.id
-  const data = await scoutStore.fetchScoutDetail(Number(id))
-  scout.value = data
-  scoutText.value = data.scoutText || scoutText.value
-  console.log('👔 管理者最終承認画面を表示:', id)
+  const id = Number(route.params.id)
+  if (!Number.isFinite(id) || id <= 0) {
+    loadError.value = '不正なIDです'
+    isLoading.value = false
+    return
+  }
+
+  try {
+    const data = await scoutStore.fetchScoutDetail(id)
+    scout.value = {
+      ...scout.value,
+      ...data
+    }
+    scoutText.value = data.scoutText || ''
+    console.log('👔 管理者最終承認画面を表示:', id)
+  } catch (e) {
+    loadError.value = e instanceof Error ? e.message : 'データ取得に失敗しました'
+    console.error('❌ 管理者最終承認画面の取得失敗:', e)
+  } finally {
+    isLoading.value = false
+  }
 })
 
 const approve = async () => {
@@ -270,6 +311,19 @@ const adminListChange= (tab: string) => {
   width: 100%;
   margin: 0 auto;
   padding: 2rem;
+}
+
+.state-message {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.state-message.error {
+  color: #b71c1c;
 }
 
 .approval-layout {
