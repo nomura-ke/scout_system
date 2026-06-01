@@ -258,10 +258,15 @@ onMounted(async () => {
 const approve = async () => {
   const confirmed = confirm('最終承認しますか？\n承認後、スカウト文のステータスが「承認済」になります。')
   if (!confirmed) return
-  
-  await scoutStore.approveByAdmin(scout.value.id)
-  alert('✅ 最終承認しました！ステータスが「承認済」になりました。')
-  router.push('/admin-list')
+
+  try {
+    await scoutStore.approveByAdmin(scout.value.id)
+    alert('✅ 最終承認しました！ステータスが「承認済」になりました。')
+    router.push('/admin-list')
+  } catch (e) {
+    const message = e instanceof Error ? e.message : '最終承認に失敗しました'
+    alert(`❌ ${message}`)
+  }
 }
 
 const reject = async () => {
@@ -272,10 +277,15 @@ const reject = async () => {
   
   const confirmed = confirm(`差戻しますか？\n理由: ${rejectionReason.value}`)
   if (!confirmed) return
-  
-  await scoutStore.rejectByAdmin(scout.value.id, rejectionReason.value)
-  alert('❌ 差戻しました（管理者）')
-  router.push('/admin-list')
+
+  try {
+    await scoutStore.rejectByAdmin(scout.value.id, rejectionReason.value)
+    alert('❌ 差戻しました（管理者）')
+    router.push('/admin-list')
+  } catch (e) {
+    const message = e instanceof Error ? e.message : '差戻しに失敗しました'
+    alert(`❌ ${message}`)
+  }
 }
 const adminListChange= (tab: string) => {
   if (tab === 'スカウト文一覧') {

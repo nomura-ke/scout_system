@@ -136,7 +136,7 @@ async function fetchScouts() {
   error.value = null
   
   try {
-    const data = await scoutStore.fetchLeaderList()
+    const data = await scoutStore.fetchAdminList()
     pendingScoutsData.value = data.pending
     approvedScoutsData.value = data.approved
   } catch (e) {
