@@ -69,6 +69,8 @@ export const useScoutStore = defineStore('scout', () => {
       id: scout.id,
       creatorName: detail?.creator?.username || '',
       appliedAt: scout.submitted_at || scout.updated_at || '',
+      leaderApprovedAt: scout.leader_approved_at || scout.approved_at || scout.updated_at || '',
+      approvedAt: scout.approved_at || scout.updated_at || '',
       senderName: parseSeekerName(aiInfo),
       senderAge: aiInfo.age_range || '-',
       senderGender: aiInfo.gender || '-',
