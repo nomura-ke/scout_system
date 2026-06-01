@@ -75,7 +75,7 @@
               固定NGワード（必ず、絶対に、誰でも、簡単に、確実に、今だけ、早い者勝ち、限定、日本人限定、外国人NG、女性限定、男性歓迎、既婚者歓迎、若手限定、高収入保証）は常にチェックされます。
             </p>
           </div>
-          <button @click="generateScout" class="btn-generate">
+          <button @click="validateAndGenerateScout" class="btn-generate">
             🤖 AIでスカウト文を生成
           </button>
         </div>
@@ -123,23 +123,28 @@ const handleTabChange = (tab: string) => {
   }
 }
 
-const generateScout = async () => {
+const validateAndGenerateScout = async () => {
+  // 必須項目チェック
+  if (!aiForm.value.age || !aiForm.value.gender || !aiForm.value.jobType) {
+    alert('年齢・性別・職種は必須項目です');
+    return;
+  }
   try {
     console.log('🤖 スカウト文を生成中...')
     const result = await scoutStore.generateScout({
-      ...aiForm.value,     
-      ...draftForm.value
+      ...draftForm.value,
+      ...aiForm.value
     })
     console.log('✅ 生成完了:', result)
     alert('スカウト文を生成しました！')
     router.push(`/scout-detail/${result.id}`)
   } catch (error) {
     console.error('❌ 生成失敗:', error)
-    const message = error instanceof Error ? error.message : '生成に失敗しました'
-    alert(message)
+    alert('生成に失敗しました')
   }
 }
 </script>
+
 
 <style scoped>
 .scout-create-container {
