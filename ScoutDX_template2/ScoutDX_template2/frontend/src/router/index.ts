@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import RegisterView from '../views/RegisterView.vue'
 import LoginView from '../views/LoginView.vue'
 import RoleSelectView from '../views/RoleSelectView.vue'
 import ScoutListView from '../views/ScoutListView.vue'
@@ -14,7 +15,12 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/login'
+      redirect: '/register'
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: RegisterView
     },
     {
       path: '/login',

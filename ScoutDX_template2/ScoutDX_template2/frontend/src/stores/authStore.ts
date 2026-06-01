@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { getUserRoles, login as loginApi, logout as logoutApi, selectRole } from '../api/scoutApi'
+import { getUserRoles, login as loginApi, logout as logoutApi, register as registerApi, selectRole } from '../api/scoutApi'
 
 export type UserRole = 'creator' | 'leader' | 'admin'
 
@@ -50,15 +50,43 @@ export const useAuthStore = defineStore('auth', () => {
     return { user: user.value, token: data.token }
   }
 
-  const setRole = async (selectedRole: UserRole) => {
-    if (!availableRoleList.value.length) {
-      const roles = await getUserRoles()
-      availableRoleList.value = roles.map((r: any) => ({
-        id: Number(r.id),
-        role: r.role,
-        role_name: r.role_name
-      }))
+  const register = async (employeeId: string, password: string, selectedRole: UserRole) => {
+    const username = employeeId.trim()
+    const pass = password.trim()
+
+    if (!username || !pass || !selectedRole) {
+      throw new Error('社員番号・パスワード・ロールを入力してください')
     }
+
+    if (pass.length < 8) {
+      throw new Error('パスワードは8文字以上で入力してください')
+    }
+
+    const result = await registerApi({ username, password: pass, role: selectedRole })
+    if (!result?.success) {
+      throw new Error('ユーザー登録に失敗しました')
+    }
+
+    return result
+  }
+
+  const ensureRolesLoaded = async () => {
+    if (availableRoleList.value.length) {
+      return availableRoleList.value
+    }
+
+    const roles = await getUserRoles()
+    availableRoleList.value = roles.map((r: any) => ({
+      id: Number(r.id),
+      role: r.role,
+      role_name: r.role_name
+    }))
+
+    return availableRoleList.value
+  }
+
+  const setRole = async (selectedRole: UserRole) => {
+    await ensureRolesLoaded()
 
     const target = availableRoleList.value.find((r) => r.role === selectedRole)
     if (!target) {
@@ -116,6 +144,8 @@ export const useAuthStore = defineStore('auth', () => {
     availableRoleList,
     isAuthenticated,
     login,
+    register,
+    ensureRolesLoaded,
     setRole,
     logout,
     restoreAuth

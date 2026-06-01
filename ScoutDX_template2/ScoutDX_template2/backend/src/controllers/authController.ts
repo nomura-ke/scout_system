@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/authService';
+import { UserRole } from '../types';
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -8,7 +9,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     if (!username || !password) {
       return res.status(400).json({
         success: false,
-        message: 'ユーザー名とパスワードは必須です'
+        message: '社員番号とパスワードは必須です'
       });
     }
 
@@ -44,12 +45,28 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, role } = req.body;
+    const roleMap: Record<string, UserRole> = {
+      creator: 'creator',
+      leader: 'leader',
+      admin: 'admin',
+      作成者: 'creator',
+      営業リーダー: 'leader',
+      管理者: 'admin'
+    };
+    const normalizedRole = roleMap[String(role).trim()] ?? null;
 
-    if (!username || !password) {
+    if (!username || !password || !role) {
       return res.status(400).json({
         success: false,
-        message: 'ユーザー名とパスワードは必須です'
+        message: '社員番号・パスワード・ロールは必須です'
+      });
+    }
+
+    if (!normalizedRole) {
+      return res.status(400).json({
+        success: false,
+        message: 'ロールは作成者・営業リーダー・管理者から選択してください'
       });
     }
 
@@ -60,11 +77,11 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
       });
     }
 
-    const result = await authService.registerUser(username, password);
+    const result = await authService.registerUser(username, password, normalizedRole);
     if (!result.success) {
       return res.status(409).json({
         success: false,
-        message: result.message || 'このユーザー名は既に使用されています'
+        message: result.message || 'この社員番号は既に使用されています'
       });
     }
 

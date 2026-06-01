@@ -22,7 +22,7 @@ export async function login(payload: { username: string; password: string }) {
   return handleResponse<{ success: boolean; data: any }>(response)
 }
 
-export async function register(payload: { username: string; password: string }) {
+export async function register(payload: { username: string; password: string; role: 'creator' | 'leader' | 'admin' }) {
   const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

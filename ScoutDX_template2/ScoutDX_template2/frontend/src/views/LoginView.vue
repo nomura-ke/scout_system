@@ -10,7 +10,7 @@
             <input
               v-model="employeeId"
               type="text"
-              placeholder="ユーザ名を入力"
+              placeholder="社員番号を入力"
               class="form-input"
               required
             />
@@ -29,6 +29,10 @@
           <button type="submit" class="btn-primary" @click.prevent="handleLogin">
             ログイン
           </button>
+          <p class="register-link-text">
+            まだアカウントをお持ちでない方は
+            <RouterLink to="/register" class="link">こちら</RouterLink>
+          </p>
         </form>
       </div>
     </div>
@@ -37,11 +41,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import AppFooter from '../components/AppFooter.vue'
 
-const iminai = 0
 const router = useRouter()
 const authStore = useAuthStore()
 
@@ -130,5 +133,11 @@ console.log('LoginView がマウントされました')
   font-weight: bold;
   cursor: pointer;
   margin-top: var(--space-4);
+}
+
+.register-link-text {
+  margin-top: var(--space-4);
+  text-align: center;
+  color: var(--color-text-muted);
 }
 </style>

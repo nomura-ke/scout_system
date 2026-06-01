@@ -243,6 +243,18 @@ export const assignDefaultRole = async (userId: number): Promise<void> => {
 };
 
 /**
+ * ロール割当（ユーザー登録時）
+ */
+export const assignRole = async (userId: number, role: UserRole): Promise<void> => {
+  const query = `
+    INSERT INTO user_roles (user_id, role, assigned_at)
+    VALUES ($1, $2, NOW())
+  `;
+
+  await pool.query(query, [userId, role]);
+};
+
+/**
  * ロール権限チェック
  */
 export const hasRole = async (userId: number, role: UserRole): Promise<boolean> => {
@@ -852,6 +864,7 @@ export default {
   // ロール
   findUserRoles,
   assignDefaultRole,
+  assignRole,
   hasRole,
   
   // スカウト文

@@ -39,7 +39,7 @@ export const authService = {
     };
   },
 
-  registerUser: async (username: string, password: string): Promise<AuthResponse> => {
+  registerUser: async (username: string, password: string, role: UserRole): Promise<AuthResponse> => {
     const exists = await db.existsUsername(username);
     if (exists) {
       return { success: false, message: 'このユーザー名は既に使用されています' };
@@ -47,7 +47,7 @@ export const authService = {
 
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
     const userId = await db.createUser(username, hashedPassword);
-    await db.assignDefaultRole(userId);
+    await db.assignRole(userId, role);
 
     return {
       success: true,

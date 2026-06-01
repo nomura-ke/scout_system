@@ -4,13 +4,22 @@
     <div class="role-content">
       <h1 class="role-title">ロール選択</h1>
       <div class="role-cards">
-        <div class="role-card role-creator" @click="selectRole('creator')">
+        <div
+          class="role-card role-creator"
+          @click="selectRole('creator')"
+        >
           <span class="role-name">作成者</span>
         </div>
-        <div class="role-card role-leader" @click="selectRole('leader')">
+        <div
+          class="role-card role-leader"
+          @click="selectRole('leader')"
+        >
           <span class="role-name">営業リーダー</span>
         </div>
-        <div class="role-card role-admin" @click="selectRole('admin')">
+        <div
+          class="role-card role-admin"
+          @click="selectRole('admin')"
+        >
           <span class="role-name">管理者</span>
         </div>
       </div>
@@ -20,15 +29,34 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/authStore'
-import AppHeader from '../components/AppHeader.vue'  // ⚠️ 修正2: 相対パスに
-import AppFooter from '../components/AppFooter.vue'  // ⚠️ 修正2: 相対パスに
+import { useAuthStore, type UserRole } from '../stores/authStore'
+import AppHeader from '../components/AppHeader.vue'
+import AppFooter from '../components/AppFooter.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-const selectRole = async (role: 'creator' | 'leader' | 'admin') => {
+const availableRoles = computed(() => authStore.availableRoleList.map((roleInfo: { role: UserRole }) => roleInfo.role))
+
+const isRoleAvailable = (role: UserRole) => availableRoles.value.includes(role)
+
+onMounted(async () => {
+  try {
+    await authStore.ensureRolesLoaded()
+  } catch (error) {
+    console.error('ロール取得に失敗しました', error)
+    await authStore.logout()
+    router.push('/login')
+  }
+})
+
+const selectRole = async (role: UserRole) => {
+  if (!isRoleAvailable(role)) {
+    return
+  }
+
   await authStore.setRole(role)
   
   if (role === 'creator') {
