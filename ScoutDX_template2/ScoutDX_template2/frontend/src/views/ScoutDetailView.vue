@@ -79,8 +79,8 @@
             ></textarea>
           </div>
           <div class="action-buttons">
-            <button @click="saveScout" class="btn-save">保存</button>
-            <button @click="requestApproval" class="btn-approval">
+            <button @click="saveScout" class="btn-save" :disabled="!isActionEnabled">保存</button>
+            <button @click="requestApproval" class="btn-approval" :disabled="!isActionEnabled">
               承認申請(営業リーダーへ)
             </button>
           </div>
@@ -190,6 +190,8 @@ const resolveRejectionComments = (data: any): RejectionCommentView[] => {
   return Array.from(unique.values())
 }
 
+const isActionEnabled = computed(() => ['draft', 'rejected'].includes(scout.value.status))
+
 onMounted(async () => {
   const id = route.params.id
   const data = await scoutStore.fetchScoutDetail(Number(id))
@@ -211,11 +213,13 @@ const handleTabChange = (tab: string) => {
 }
 
 const saveScout = async () => {
+  if (!isActionEnabled.value) return
   await scoutStore.updateScout(scout.value.id, { scoutText: scoutText.value })
   alert('保存しました')
 }
 
 const requestApproval = async () => {
+  if (!isActionEnabled.value) return
   try {
     console.log('🚀 承認申請を送信中...');
     await scoutStore.requestApproval(scout.value.id);
