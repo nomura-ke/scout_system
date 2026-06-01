@@ -7,7 +7,39 @@
       
       <div class="action-bar">
         <div class="filter-section">
-          <button class="btn-filter">絞込 ▼</button>
+          <button class="btn-filter" @click="toggleFilterPanel">絞込 ▼</button>
+          <div v-if="isFilterOpen" class="filter-panel">
+            <div class="filter-item">
+              <label>ステータス</label>
+              <select v-model="filters.status" class="filter-select" @change="applyFilters">
+                <option value="">すべて</option>
+                <option v-for="status in statusOptions" :key="status" :value="status">{{ status }}</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <label>募集職種</label>
+              <select v-model="filters.recruitmentPosition" class="filter-select" @change="applyFilters">
+                <option value="">すべて</option>
+                <option
+                  v-for="position in recruitmentPositionOptions"
+                  :key="position"
+                  :value="position"
+                >
+                  {{ position }}
+                </option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <label>会社名</label>
+              <select v-model="filters.companyName" class="filter-select" @change="applyFilters">
+                <option value="">すべて</option>
+                <option v-for="company in companyNameOptions" :key="company" :value="company">
+                  {{ company }}
+                </option>
+              </select>
+            </div>
+            <button class="btn-clear" @click="clearFilters">クリア</button>
+          </div>
         </div>
         <button @click="goToCreate" class="btn-create">スカウト文作成</button>
       </div>
@@ -25,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useScoutStore } from '../stores/scoutStore'
 import AppHeader from '../components/AppHeader.vue'
@@ -35,7 +67,24 @@ import ScoutTable from '../components/ScoutTable.vue'
 const router = useRouter()
 const scoutStore = useScoutStore()
 
-const scoutList = ref([])
+const scoutList = ref<any[]>([])
+const allScouts = ref<any[]>([])
+const isFilterOpen = ref(false)
+const filters = ref({
+  status: '',
+  recruitmentPosition: '',
+  companyName: ''
+})
+
+const statusOptions = ['編集中', '営業承認待ち', '管理者承認待ち', '差戻し', '承認済み']
+
+const recruitmentPositionOptions = computed(() => {
+  return [...new Set(allScouts.value.map((item: any) => item.recruitmentPosition).filter(Boolean).filter((value: string) => value !== '-'))]
+})
+
+const companyNameOptions = computed(() => {
+  return [...new Set(allScouts.value.map((item: any) => item.companyName).filter(Boolean).filter((value: string) => value !== '-'))]
+})
 
 const columns = [
   { key: 'id', label: 'ID' },
@@ -49,8 +98,29 @@ const columns = [
 ]
 
 onMounted(async () => {
-  scoutList.value = await scoutStore.fetchScoutList()
+  allScouts.value = await scoutStore.fetchScoutList()
+  scoutList.value = [...allScouts.value]
 })
+
+const toggleFilterPanel = () => {
+  isFilterOpen.value = !isFilterOpen.value
+}
+
+const applyFilters = () => {
+  scoutList.value = allScouts.value.filter((item: any) => {
+    const statusMatched = !filters.value.status || item.status === filters.value.status
+    const positionMatched = !filters.value.recruitmentPosition || item.recruitmentPosition === filters.value.recruitmentPosition
+    const companyMatched = !filters.value.companyName || item.companyName === filters.value.companyName
+    return statusMatched && positionMatched && companyMatched
+  })
+}
+
+const clearFilters = () => {
+  filters.value.status = ''
+  filters.value.recruitmentPosition = ''
+  filters.value.companyName = ''
+  scoutList.value = [...allScouts.value]
+}
 
 // タブ切り替え
 const handleTabChange = (tab: string) => {
@@ -74,7 +144,8 @@ const handleEdit = (id: number) => {
 const handleDelete = async (id: number) => {
   if (confirm('削除してもよろしいですか？')) {
     await scoutStore.deleteScout(id)
-    scoutList.value = await scoutStore.fetchScoutList()
+    allScouts.value = await scoutStore.fetchScoutList()
+    applyFilters()
   }
 }
 </script>
@@ -110,8 +181,55 @@ const handleDelete = async (id: number) => {
 }
 
 .filter-section {
+  position: relative;
   display: flex;
   gap: 1rem;
+}
+
+.filter-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  width: 320px;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #d7d7d7;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+  z-index: 20;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+
+.filter-item label {
+  font-size: 0.85rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.filter-select {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #c7c7c7;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.btn-clear {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #b8b8b8;
+  background: #f8f8f8;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-clear:hover {
+  background: #efefef;
 }
 
 .btn-filter {
