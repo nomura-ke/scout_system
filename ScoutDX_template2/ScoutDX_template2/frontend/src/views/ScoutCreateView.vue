@@ -3,15 +3,16 @@
     <AppHeader 
       :tabs="['スカウト文作成', 'スカウト文一覧']" 
       active-tab="スカウト文作成"
+      :show-logout="true"
       @tab-change="handleTabChange"
     />
     
     <div class="content">
       <h1 class="page-title">スカウト文作成</h1>
 
-      <!-- ドラフト入力フォーム -->
+      <!-- 下書き入力フォーム -->
       <div class="form-section">
-        <h2 class="section-title">ドラフト入力</h2>
+        <h2 class="section-title">下書き入力</h2>
         <div class="form-card">
           <div class="form-group">
             <label>会社名</label>
@@ -19,7 +20,7 @@
           </div>
           <div class="form-group">
             <label>募集職種</label>
-            <input v-model="draftForm.recruitmentPosition" type="text" class="form-input" />
+            <input v-model="draftForm.jobType" type="text" class="form-input" />
           </div>
           <div class="form-group">
             <label>業務内容</label>
@@ -48,10 +49,6 @@
       <div class="form-section">
         <h2 class="section-title">AI生成用入力</h2>
         <div class="form-card">
-          <div class="form-group">
-            <label>求職者（必須）</label>
-            <input v-model="aiForm.seekerName" type="text" class="form-input" placeholder="求職者名を入力（例: 山田 太郎）" required />
-          </div>
           <div class="form-row">
             <div class="form-group">
               <label>年齢</label>
@@ -69,11 +66,14 @@
           </div>
           <div class="form-group">
             <label>職種</label>
-            <input v-model="aiForm.preferredPosition" type="text" class="form-input" />
+            <input v-model="aiForm.jobType" type="text" class="form-input" />
           </div>
           <div class="form-group">
-            <label>NGワード（カンマ区切り）</label>
+            <label>追加NGワード（カンマ区切り）</label>
             <input v-model="aiForm.ngWords" type="text" class="form-input" placeholder="例: 残業, 休日出勤" />
+            <p class="form-note">
+              固定NGワード（必ず、絶対に、誰でも、簡単に、確実に、今だけ、早い者勝ち、限定、日本人限定、外国人NG、女性限定、男性歓迎、既婚者歓迎、若手限定、高収入保証）は常にチェックされます。
+            </p>
           </div>
           <button @click="generateScout" class="btn-generate">
             🤖 AIでスカウト文を生成
@@ -98,7 +98,7 @@ const scoutStore = useScoutStore()
 
 const draftForm = ref({
   companyName: '',
-  recruitmentPosition: '',
+  jobType: '',
   jobDescription: '',
   requiredSkills: '',
   location: '',
@@ -107,10 +107,9 @@ const draftForm = ref({
 })
 
 const aiForm = ref({
-  seekerName: '',
   age: '',
   gender: '',
-  preferredPosition: '',
+  jobType: '',
   ngWords: ''
 })
 
@@ -126,25 +125,18 @@ const handleTabChange = (tab: string) => {
 
 const generateScout = async () => {
   try {
-    if (!aiForm.value.seekerName.trim()) {
-      alert('求職者の名前を入力してください')
-      return
-    }
     console.log('🤖 スカウト文を生成中...')
     const result = await scoutStore.generateScout({
-      ...draftForm.value,
-      seekerName: aiForm.value.seekerName,
-      age: aiForm.value.age,
-      gender: aiForm.value.gender,
-      preferredPosition: aiForm.value.preferredPosition,
-      ngWords: aiForm.value.ngWords
+      ...aiForm.value,     
+      ...draftForm.value
     })
     console.log('✅ 生成完了:', result)
     alert('スカウト文を生成しました！')
     router.push(`/scout-detail/${result.id}`)
   } catch (error) {
     console.error('❌ 生成失敗:', error)
-    alert('生成に失敗しました')
+    const message = error instanceof Error ? error.message : '生成に失敗しました'
+    alert(message)
   }
 }
 </script>
@@ -152,63 +144,51 @@ const generateScout = async () => {
 <style scoped>
 .scout-create-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
-  display: flex;
-  flex-direction: column;
 }
 
 .content {
-  flex: 1;
   max-width: 1200px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 2rem;
 }
 
 .page-title {
-  font-size: 2rem;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-7);
 }
 
 .form-section {
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-7);
 }
 
 .section-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
-  color: #333;
+  margin-bottom: var(--space-4);
 }
 
 .form-card {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: var(--space-7);
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
   font-weight: 500;
-  color: #333;
+}
+
+.form-note {
+  margin-top: var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  line-height: 1.5;
 }
 
 .form-input,
 .form-select,
 .form-textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
+  font-size: var(--font-md);
 }
 
 .form-textarea {
@@ -219,30 +199,16 @@ const generateScout = async () => {
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .btn-generate {
   width: 100%;
-  padding: 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-lg);
   font-weight: bold;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
-}
-
-.btn-generate:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
-}
-
-.btn-generate:active {
-  transform: translateY(0);
 }
 
 @media (max-width: 768px) {

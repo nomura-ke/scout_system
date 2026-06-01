@@ -103,6 +103,10 @@ export const generateScout = async (req: Request, res: Response, next: NextFunct
   try {
     const userId = (req as any).user.userId;
     const { draftData, aiRequest } = req.body;
+    const normalizedAiRequest = {
+      ...aiRequest,
+      ng_words: aiRequest?.ng_words ?? aiRequest?.ngWords ?? ''
+    };
 
     // バリデーション
     if (!draftData || !aiRequest) {
@@ -113,10 +117,10 @@ export const generateScout = async (req: Request, res: Response, next: NextFunct
     }
 
     // AI生成処理
-    const generatedText = await aiService.generateScoutText(draftData, aiRequest);
+    const generatedText = await aiService.generateScoutText(draftData, normalizedAiRequest);
 
     // NGワードチェック
-    const ngCheckResult = aiService.checkNGWords(generatedText, aiRequest.ngWords);
+    const ngCheckResult = aiService.checkNGWords(generatedText, normalizedAiRequest.ng_words);
     if (!ngCheckResult.passed) {
       return res.status(400).json({
         success: false,
@@ -131,7 +135,7 @@ export const generateScout = async (req: Request, res: Response, next: NextFunct
     const scout = await scoutService.createScoutFromGeneration(
       userId,
       draftData,
-      aiRequest,
+      normalizedAiRequest,
       generatedText
     );
 
@@ -273,3 +277,4 @@ export const saveDraft = async (req: Request, res: Response, next: NextFunction)
     return next(error);
   }
 };
+

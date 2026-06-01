@@ -1,14 +1,45 @@
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const DEFAULT_NG_WORDS = [
+  '必ず',
+  '絶対に',
+  '誰でも',
+  '簡単に',
+  '確実に',
+  '今だけ',
+  '早い者勝ち',
+  '限定',
+  '日本人限定',
+  '外国人NG',
+  '女性限定',
+  '男性歓迎',
+  '既婚者歓迎',
+  '若手限定',
+  '高収入保証'
+];
+
+const normalizeNGWords = (ngWords?: string | string[]): string[] => {
+  const rawWords = Array.isArray(ngWords)
+    ? ngWords
+    : (ngWords || '').split(/[,、]/);
+
+  return Array.from(
+    new Set(
+      [...DEFAULT_NG_WORDS, ...rawWords]
+        .map((word) => word.trim())
+        .filter(Boolean)
+    )
+  );
+};
+
 export const aiService = {
   generateScoutText: async (draftData: any, aiRequest: any): Promise<string> => {
     const companyName = draftData?.company_name || '貴社';
     const position = draftData?.position || aiRequest?.position || 'ポジション';
     const appeal = draftData?.job_appeal || '';
     const salary = draftData?.salary || aiRequest?.salary || '';
-    const seekerNameRaw = aiRequest?.seeker_name || aiRequest?.seekerName || '';
-    const seekerName = typeof seekerNameRaw === 'string' ? seekerNameRaw.trim() : '';
-    const greeting = seekerName ? `${seekerName}様` : '候補者様';
 
-    let text = `${greeting}\n\n`;
+    let text = '候補者様\n\n';
     text += `この度は、${companyName}の${position}ポジションについてご案内いたします。\n\n`;
 
     if (appeal) {
@@ -26,15 +57,10 @@ export const aiService = {
   },
 
   checkNGWords: (text: string, ngWords?: string | string[]) => {
-    const normalizedWords = Array.isArray(ngWords)
-      ? ngWords
-      : (ngWords || '')
-          .split(',')
-          .map((word) => word.trim())
-          .filter(Boolean);
+    const normalizedWords = normalizeNGWords(ngWords);
 
     const detectedWords = normalizedWords.filter((word) =>
-      new RegExp(word, 'i').test(text)
+      new RegExp(escapeRegExp(word), 'i').test(text)
     );
 
     return {
