@@ -51,12 +51,12 @@
         <div class="form-card">
           <div class="form-row">
             <div class="form-group">
-              <label>年齢</label>
-              <input v-model="aiForm.age" type="text" class="form-input" />
+              <label>年齢 <span style="color: red">*</span></label>
+              <input v-model="aiForm.age" type="text" class="form-input" required />
             </div>
-            <div class="form-group">
-              <label>性別</label>
-              <select v-model="aiForm.gender" class="form-select">
+           <div class="form-group">
+              <label>性別 <span style="color: red">*</span></label>
+              <select v-model="aiForm.gender" class="form-select" required>
                 <option value="">選択してください</option>
                 <option value="男">男</option>
                 <option value="女">女</option>
@@ -65,8 +65,8 @@
             </div>
           </div>
           <div class="form-group">
-            <label>職種</label>
-            <input v-model="aiForm.jobType" type="text" class="form-input" />
+           <label>職種 <span style="color: red">*</span></label>
+            <input v-model="aiForm.jobType" type="text" class="form-input" required />
           </div>
           <div class="form-group">
             <label>追加NGワード（カンマ区切り）</label>
@@ -75,7 +75,7 @@
               固定NGワード（必ず、絶対に、誰でも、簡単に、確実に、今だけ、早い者勝ち、限定、日本人限定、外国人NG、女性限定、男性歓迎、既婚者歓迎、若手限定、高収入保証）は常にチェックされます。
             </p>
           </div>
-          <button @click="generateScout" class="btn-generate">
+          <button @click="validateAndGenerateScout" class="btn-generate">
             🤖 AIでスカウト文を生成
           </button>
         </div>
@@ -123,23 +123,28 @@ const handleTabChange = (tab: string) => {
   }
 }
 
-const generateScout = async () => {
+const validateAndGenerateScout = async () => {
+  // 必須項目チェック
+  if (!aiForm.value.age || !aiForm.value.gender || !aiForm.value.jobType) {
+    alert('年齢・性別・職種は必須項目です');
+    return;
+  }
   try {
     console.log('🤖 スカウト文を生成中...')
     const result = await scoutStore.generateScout({
-      ...aiForm.value,     
-      ...draftForm.value
+      ...draftForm.value,
+      ...aiForm.value
     })
     console.log('✅ 生成完了:', result)
     alert('スカウト文を生成しました！')
     router.push(`/scout-detail/${result.id}`)
   } catch (error) {
     console.error('❌ 生成失敗:', error)
-    const message = error instanceof Error ? error.message : '生成に失敗しました'
-    alert(message)
+    alert('生成に失敗しました')
   }
 }
 </script>
+
 
 <style scoped>
 .scout-create-container {

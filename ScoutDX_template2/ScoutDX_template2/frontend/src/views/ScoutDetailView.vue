@@ -1,6 +1,6 @@
 <template>
   <div class="scout-detail-container">
-    <AppHeader :tabs="['スカウト文作成', 'スカウト文一覧']" active-tab="スカウト文一覧" :show-logout="true" @tab-change="handleTabChange" />
+    <AppHeader :tabs="['スカウト文作成', 'スカウト文一覧']" active-tab="スカウト文一覧" @tab-change="handleTabChange" />
     
     <div class="content">
       <div class="detail-layout">
@@ -18,7 +18,7 @@
             </div>
             <div class="detail-row">
               <span class="detail-label">申請日時</span>
-              <span class="detail-value">{{ appliedAtJst }}</span>
+              <span class="detail-value">{{ scout.appliedAt }}</span>
             </div>
             <div class="detail-group">
               <span class="detail-label">送信者情報</span>
@@ -42,7 +42,7 @@
               <span class="detail-value">{{ scout.companyName }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">募集職種</span>
+              <span class="detail-label">職種</span>
               <span class="detail-value">{{ scout.jobType }}</span>
             </div>
             <div class="detail-row">
@@ -79,21 +79,10 @@
             ></textarea>
           </div>
           <div class="action-buttons">
-            <button @click="saveScout" class="btn-save" :disabled="!isActionEnabled">保存</button>
-            <button @click="requestApproval" class="btn-approval" :disabled="!isActionEnabled">
+            <button @click="saveScout" class="btn-save">保存</button>
+            <button @click="requestApproval" class="btn-approval">
               承認申請(営業リーダーへ)
             </button>
-          </div>
-
-          <div v-if="showApprovalHistory" class="approval-history">
-            <h3 class="approval-title">承認履歴</h3>
-            <div v-if="approvalHistory.length > 0" class="approval-list">
-              <div v-for="(history, index) in approvalHistory" :key="index" class="approval-item">
-                <p class="approval-meta">{{ history.role }} / {{ history.action }} / {{ history.date }}</p>
-                <p v-if="history.comment" class="approval-comment">コメント: {{ history.comment }}</p>
-              </div>
-            </div>
-            <p v-else class="approval-empty">承認履歴はありません</p>
           </div>
            
           <div v-if="showRejectionComments" class="rejection-comments">
@@ -115,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useScoutStore } from '../stores/scoutStore' 
 import AppHeader from '../components/AppHeader.vue'      // ← 修正
@@ -125,13 +114,6 @@ import AppFooter from '../components/AppFooter.vue'
 interface RejectionCommentView {
   role: string
   text: string
-  date: string
-}
-
-interface ApprovalHistoryView {
-  role: string
-  action: string
-  comment: string
   date: string
 }
 const route = useRoute()
@@ -151,19 +133,14 @@ const scout = ref({
   requiredSkills: '',
   location: '東京都港区',
   salary: '600万円~',
-  appeal: '',
-  status: 'draft'
+  appeal: ''
 })
 
 const scoutText = ref('Aiが生成したスカウト文')
 const rejectionComments = ref<RejectionCommentView[]>([])
-const approvalHistory = ref<ApprovalHistoryView[]>([])
 
 const isActionEnabled = computed(() => ['draft', 'rejected'].includes(scout.value.status))
 const showRejectionComments = computed(() => scout.value.status === 'rejected')
-const showApprovalHistory = computed(() => {
-  return ['pending_admin', 'approved', '管理者承認待ち', '最終承認待ち', '最終承認済み', '承認済み'].includes(scout.value.status)
-})
 
 const appliedAtJst = computed(() => {
   if (!scout.value.appliedAt) return ''
@@ -194,24 +171,6 @@ const normalizeComment = (comment: any): RejectionCommentView => ({
   date: formatDateTime(comment?.date || comment?.created_at)
 })
 
-const actionLabelMap: Record<string, string> = {
-  SUBMITTED: '承認申請',
-  APPROVED_LEADER: '営業リーダー承認',
-  APPROVED_ADMIN: '管理者承認',
-  REJECTED_LEADER: '営業リーダー差戻し',
-  REJECTED_ADMIN: '管理者差戻し'
-}
-
-const normalizeApprovalHistory = (item: any): ApprovalHistoryView => {
-  const action = String(item?.action || '').toUpperCase()
-  return {
-    role: item?.role || item?.user_role || item?.reviewer_name || item?.user_name || '承認者',
-    action: actionLabelMap[action] || item?.action || '履歴',
-    comment: item?.comment || '',
-    date: formatDateTime(item?.date || item?.created_at)
-  }
-}
-
 const dedupeComments = (items: RejectionCommentView[]) => {
   const unique = new Map<string, RejectionCommentView>()
   items.forEach((item: RejectionCommentView) => {
@@ -230,16 +189,6 @@ const resolveRejectionComments = (data: any): RejectionCommentView[] => {
   return dedupeComments(raw.map(normalizeComment))
 }
 
-const resolveApprovalHistory = (data: any): ApprovalHistoryView[] => {
-  const mapped = Array.isArray(data?.approvalHistory) ? data.approvalHistory : []
-  if (mapped.length > 0) {
-    return mapped.map(normalizeApprovalHistory)
-  }
-
-  const raw = Array.isArray(data?.raw?.approvalHistory) ? data.raw.approvalHistory : []
-  return raw.map(normalizeApprovalHistory)
-}
-
 onMounted(async () => {
   const id = route.params.id
   const data = await scoutStore.fetchScoutDetail(Number(id))
@@ -247,9 +196,6 @@ onMounted(async () => {
   scoutText.value = data.scoutText
   if (data.status === 'rejected') {
     rejectionComments.value = resolveRejectionComments(data)
-  }
-  if (showApprovalHistory.value) {
-    approvalHistory.value = resolveApprovalHistory(data)
   }
 })
 
@@ -263,14 +209,15 @@ const handleTabChange = (tab: string) => {
 }
 
 const saveScout = async () => {
-  if (!isActionEnabled.value) return
   await scoutStore.updateScout(scout.value.id, { scoutText: scoutText.value })
   alert('保存しました')
 }
 
 const requestApproval = async () => {
-  if (!isActionEnabled.value) return
   try {
+    const confirmed = confirm('営業リーダーへ承認申請しますか？')
+    if (!confirmed) return
+
     console.log('🚀 承認申請を送信中...');
     await scoutStore.requestApproval(scout.value.id);
     console.log('✅ 承認申請成功');
@@ -287,55 +234,67 @@ const requestApproval = async () => {
 <style scoped>
 .scout-detail-container {
   min-height: 100vh;
+  background-color: #f5f5f5;
+  display: flex;
+  flex-direction: column;
 }
 
 .content {
+  flex: 1;
   max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
 .detail-layout {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
-  gap: var(--space-7);
+  gap: 2rem;
 }
 
 .section-title {
-  margin-bottom: var(--space-6);
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
 }
 
 .detail-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
 .detail-row {
   display: grid;
   grid-template-columns: 140px 1fr;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .detail-label,
 .sub-label {
-  padding: var(--space-3) var(--space-4);
-  background-color: var(--color-surface-muted);
+  padding: 0.75rem 1rem;
+  background-color: #f5f5f5;
   font-weight: 500;
-  border-right: 1px solid var(--color-border);
+  border-right: 1px solid #e0e0e0;
 }
 
 .detail-value,
 .sub-value {
-  padding: var(--space-3) var(--space-4);
+  padding: 0.75rem 1rem;
 }
 
 .detail-group {
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .detail-group .detail-label {
   display: block;
-  padding: var(--space-3) var(--space-4);
-  background-color: var(--color-surface-muted);
+  padding: 0.75rem 1rem;
+  background-color: #f5f5f5;
   font-weight: 500;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .detail-sub {
@@ -343,31 +302,45 @@ const requestApproval = async () => {
 }
 
 .scout-text-card {
-  padding: var(--space-6);
-  margin-bottom: var(--space-6);
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
 }
 
 .scout-textarea {
+  width: 100%;
   min-height: 400px;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
   resize: vertical;
 }
 
 .action-buttons {
   display: flex;
-  gap: var(--space-4);
+  gap: 1rem;
   justify-content: flex-end;
 }
 
 .btn-save {
-  padding: var(--space-3) var(--space-7);
-  border-radius: var(--radius-sm);
+  padding: 0.75rem 2rem;
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 4px;
   font-weight: bold;
   cursor: pointer;
 }
 
 .btn-approval {
-  padding: var(--space-3) var(--space-7);
-  border-radius: var(--radius-sm);
+  padding: 0.75rem 2rem;
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 4px;
   font-weight: bold;
   cursor: pointer;
 }
@@ -379,48 +352,6 @@ const requestApproval = async () => {
   color: #f4f7fc;
   cursor: not-allowed;
   opacity: 1;
-}
-
-.approval-history {
-  margin-top: var(--space-4);
-  background: #f5f9ff;
-  border: 1px solid #dbe8ff;
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-}
-
-.approval-title {
-  margin: 0 0 var(--space-3);
-  font-size: 1.05rem;
-  color: #194b9b;
-}
-
-.approval-list {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.approval-item {
-  background: #ffffff;
-  border: 1px solid #e4edff;
-  border-radius: var(--radius-sm);
-  padding: var(--space-3);
-}
-
-.approval-meta {
-  margin: 0;
-  font-size: 0.9rem;
-  color: #35568f;
-}
-
-.approval-comment {
-  margin: 0.35rem 0 0;
-  color: #2f3c54;
-}
-
-.approval-empty {
-  margin: 0;
-  color: #5a6c8e;
 }
 
 

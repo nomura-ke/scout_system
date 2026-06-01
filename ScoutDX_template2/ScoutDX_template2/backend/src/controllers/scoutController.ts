@@ -101,12 +101,10 @@ export const getScoutDetail = async (req: Request, res: Response, next: NextFunc
  */
 export const generateScout = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const MIN_SCOUT_LENGTH = 500;
+    const MAX_SCOUT_LENGTH = 1500;
     const userId = (req as any).user.userId;
     const { draftData, aiRequest } = req.body;
-    const normalizedAiRequest = {
-      ...aiRequest,
-      ng_words: aiRequest?.ng_words ?? aiRequest?.ngWords ?? ''
-    };
 
     // バリデーション
     if (!draftData || !aiRequest) {
@@ -117,10 +115,18 @@ export const generateScout = async (req: Request, res: Response, next: NextFunct
     }
 
     // AI生成処理
-    const generatedText = await aiService.generateScoutText(draftData, normalizedAiRequest);
+    const generatedText = await aiService.generateScoutText(draftData, aiRequest);
+    const generatedLength = Array.from(generatedText || '').length;
+
+    if (generatedLength < MIN_SCOUT_LENGTH || generatedLength > MAX_SCOUT_LENGTH) {
+      return res.status(400).json({
+        success: false,
+        message: `生成文字数は${MIN_SCOUT_LENGTH}〜${MAX_SCOUT_LENGTH}文字である必要があります（現在: ${generatedLength}文字）`
+      });
+    }
 
     // NGワードチェック
-    const ngCheckResult = aiService.checkNGWords(generatedText, normalizedAiRequest.ng_words);
+    const ngCheckResult = aiService.checkNGWords(generatedText, aiRequest.ngWords);
     if (!ngCheckResult.passed) {
       return res.status(400).json({
         success: false,
@@ -135,7 +141,7 @@ export const generateScout = async (req: Request, res: Response, next: NextFunct
     const scout = await scoutService.createScoutFromGeneration(
       userId,
       draftData,
-      normalizedAiRequest,
+      aiRequest,
       generatedText
     );
 
@@ -277,4 +283,3 @@ export const saveDraft = async (req: Request, res: Response, next: NextFunction)
     return next(error);
   }
 };
-

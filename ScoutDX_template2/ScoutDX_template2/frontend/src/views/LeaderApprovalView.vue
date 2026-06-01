@@ -1,16 +1,9 @@
 <template>
   <div class="approval-container">
-    <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" :show-logout="true" @tab-change="handleTabChange" />
-
-    <div class="leader-banner">
-      <span class="leader-badge">👔 営業リーダー承認</span>
-      <span class="status-badge">承認待ち</span>
-    </div>
-
+    <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" @tab-change="handleTabChange" />
+    
     <div class="content">
-      
-      <div v-if="loadError" class="state-message error">{{ loadError }}</div>
-      <div v-else class="approval-layout">
+      <div class="approval-layout">
         <!-- 左側：スカウト文詳細 -->
         <div class="detail-section">
           <h2 class="section-title">スカウト文詳細</h2>
@@ -18,18 +11,17 @@
             <div class="detail-row">
               <span class="detail-label">ID</span>
               <span class="detail-value">{{ scout.id }}</span>
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">作成者名前</span>
               <span class="detail-value">{{ scout.creatorName }}</span>
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-row">
               <span class="detail-label">申請日時</span>
-              <span class="detail-value">{{ appliedAtJst }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">前回承認日時</span>
-              <span class="detail-value">{{ leaderApprovalDateJst }}</span>
+              <span class="detail-value">{{ scout.appliedAt }}</span>
+              <input type="checkbox" class="detail-check" />
             </div>
             <div class="detail-group">
               <div class="group-header">
@@ -93,10 +85,9 @@
         <div class="scout-text-section">
           <h2 class="section-title">スカウト文章</h2>
           <div class="scout-text-card">
-            <p class="scout-text">{{ scoutText }}</p>
+            <p class="scout-text">{{ scout.scoutText }}</p>
           </div>
           <div class="reason-input">
-            <label class="reason-label">差戻理由（営業リーダー）</label>
             <input
               v-model="rejectionReason"
               type="text"
@@ -113,27 +104,9 @@
         <!-- 右側：過去の差戻しコメント -->
         <div class="comment-section">
           <div class="comment-box">
-            <h3 class="comment-title">📋 承認履歴</h3>
-            <div class="history-item">
-              <div class="history-header">
-                <span class="history-role">営業リーダー</span>
-                <span class="history-status approved">✓ 確認中</span>
-              </div>
-              <div class="history-body">
-                <p class="history-approver">担当者: {{ scout.creatorName }}</p>
-                <p class="history-date">申請: {{ appliedAtJst }}</p>
-              </div>
-            </div>
-
             <h3 class="comment-title">過去の差戻しコメント</h3>
-            <div v-if="comments.length > 0">
-              <div v-for="(comment, index) in comments" :key="index" class="comment-item">
-                <p class="comment-role">{{ comment.role }}:</p>
-                <p class="comment-text">{{ comment.text }}</p>
-                <p class="comment-date">{{ comment.date }}</p>
-              </div>
-            </div>
-            <p v-else class="comment-item">差戻しコメントはありません</p>
+            <p class="comment-item">差戻しコメント１：</p>
+            <p class="comment-item">差戻しコメント２：</p>
           </div>
         </div>
       </div>
@@ -144,115 +117,47 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useScoutStore } from '../stores/scoutStore' 
 import AppHeader from '../components/AppHeader.vue'
 import AppFooter from '../components/AppFooter.vue'
 
-interface RejectionCommentView {
-  role: string
-  text: string
-  date: string
-}
-
 const route = useRoute()
 const router = useRouter()
 const scoutStore = useScoutStore()
-const isLoading = ref(true)
-const loadError = ref('')
 
 const scout = ref({
-  id: 0,
-  creatorName: '',
-  appliedAt: '',
-  leaderApprovedAt: '',
-  leaderApproverName: '',
-  senderName: '',
-  senderAge: '',
-  senderGender: '',
-  companyName: '',
-  jobType: '',
-  jobDescription: '',
-  requiredSkills: '',
-  location: '',
-  salary: '',
-  appeal: ''
+  id: 1,
+  creatorName: '賀上',
+  appliedAt: '2025-09-15 23:47:43',
+  senderName: '山田太郎',
+  senderAge: 23,
+  senderGender: '男',
+  companyName: '(株)トラスト',
+  jobType: 'エンジニア',
+  location: '東京都港区',
+  salary: '600万円~'
 })
 
 const rejectionReason = ref('')
-const comments = ref<RejectionCommentView[]>([])
-const scoutText = ref('')
-
-const leaderApprovalDate = computed(() => {
-  const s = scout.value as any
-  return s.leaderApprovedAt || s.approvedAt || ''
-})
-
-const formatJstDateTimeHM = (value: string) => {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-
-  return new Intl.DateTimeFormat('ja-JP', {
-    timeZone: 'Asia/Tokyo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  }).format(date)
-}
-
-const appliedAtJst = computed(() => {
-  return formatJstDateTimeHM(String((scout.value as any).appliedAt || ''))
-})
-
-const leaderApprovalDateJst = computed(() => {
-  return formatJstDateTimeHM(String(leaderApprovalDate.value || ''))
-})
-
-const formatDateTime = (value: unknown) => {
-  if (!value) return '-'
-  const text = String(value)
-  return text.replace('T', ' ').replace('Z', '')
-}
-
-const normalizeComment = (comment: any): RejectionCommentView => ({
-  role: comment?.role || comment?.user_role || comment?.reviewer_name || comment?.user_name || '承認者',
-  text: comment?.text || comment?.comment_text || comment?.comment || '',
-  date: formatDateTime(comment?.date || comment?.created_at)
-})
-
-const dedupeComments = (items: RejectionCommentView[]) => {
-  const unique = new Map<string, RejectionCommentView>()
-  items.forEach((item: RejectionCommentView) => {
-    unique.set(`${item.role}|${item.text}|${item.date}`, item)
-  })
-  return Array.from(unique.values())
-}
 
 onMounted(async () => {
   try {
-    const id = Number(route.params.id)
-    if (!Number.isFinite(id) || id <= 0) {
-      throw new Error('不正なIDです')
-    }
-
-    const { detail, comments: rawComments } = await scoutStore.fetchApprovalDetail(id)
-    scout.value = detail
-    scoutText.value = detail.scoutText || scoutText.value
-    const normalized = (Array.isArray(rawComments) ? rawComments : []).map(normalizeComment)
-    comments.value = dedupeComments(normalized)
-  } catch (e) {
-    loadError.value = e instanceof Error ? e.message : 'データ取得に失敗しました'
-  } finally {
-    isLoading.value = false
+    const id = route.params.id
+    const data = await scoutStore.fetchScoutDetail(Number(id))
+    scout.value = data
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '承認詳細の取得に失敗しました'
+    alert(message)
+    router.push('/leader-list')
   }
 })
 
 const approve = async () => {
+  const confirmed = confirm('承認しますか？\n承認後、ステータスは「管理者承認待ち」になります。')
+  if (!confirmed) return
+
   await scoutStore.approveScout(scout.value.id)
   alert('承認しました')
   router.push('/leader-list')
@@ -263,6 +168,10 @@ const reject = async () => {
     alert('差戻理由を入力してください')
     return
   }
+
+  const confirmed = confirm(`差戻しますか？\n理由: ${rejectionReason.value}`)
+  if (!confirmed) return
+
   await scoutStore.rejectScout(scout.value.id, rejectionReason.value)
   alert('差戻しました')
   router.push('/leader-list')
@@ -283,49 +192,12 @@ const handleTabChange = (tab: string) => {
   flex-direction: column;
 }
 
-.leader-banner {
-  background: linear-gradient(135deg, #ffd166 0%, #f4a261 100%);
-  padding: 1rem 2rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.leader-badge {
-  color: #4a2d00;
-  font-weight: bold;
-  font-size: 1.2rem;
-}
-
-.status-badge {
-  background: white;
-  color: #a85c00;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: bold;
-}
-
 .content {
   flex: 1;
   max-width: 1600px;
   width: 100%;
   margin: 0 auto;
   padding: 2rem;
-}
-
-.state-message {
-  background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
-  text-align: center;
-  color: #333;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.state-message.error {
-  color: #b71c1c;
 }
 
 .approval-layout {
@@ -394,17 +266,11 @@ const handleTabChange = (tab: string) => {
 .scout-text {
   color: #666;
   line-height: 1.8;
+  white-space: pre-wrap; 
 }
 
 .reason-input {
   margin-bottom: 1.5rem;
-}
-
-.reason-label {
-  display: block;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-  color: #333;
 }
 
 .reason-field {
@@ -433,8 +299,8 @@ const handleTabChange = (tab: string) => {
 
 .btn-approve {
   padding: 0.75rem 2rem;
-  background-color: #f9a825;
-  color: white;
+  background-color: #ffc107;
+  color: #333;
   border: none;
   border-radius: 4px;
   font-weight: bold;
@@ -455,72 +321,9 @@ const handleTabChange = (tab: string) => {
   margin-bottom: 1rem;
 }
 
-.history-item {
-  background: #fff8e1;
-  padding: 1rem;
-  border-radius: 8px;
-  border-left: 4px solid #f9a825;
-  margin-bottom: 1rem;
-}
-
-.history-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.history-role {
-  font-weight: bold;
-  color: #333;
-}
-
-.history-status {
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: bold;
-}
-
-.history-status.approved {
-  background: #f9a825;
-  color: white;
-}
-
-.history-body {
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.history-approver {
-  margin-bottom: 0.25rem;
-}
-
-.history-date {
-  font-size: 0.85rem;
-  color: #999;
-}
-
 .comment-item {
   margin-bottom: 0.5rem;
   color: #666;
-}
-
-.comment-role {
-  margin: 0 0 0.25rem;
-  font-weight: 600;
-  color: #333;
-}
-
-.comment-text {
-  margin: 0 0 0.25rem;
-  color: #444;
-}
-
-.comment-date {
-  margin: 0;
-  color: #888;
-  font-size: 0.85rem;
 }
 
 @media (max-width: 1200px) {
