@@ -19,7 +19,7 @@
         <button v-if="showLogin" class="btn-secondary" @click="goToLogin">
           ログイン
         </button>
-        <button v-if="showLogout" class="btn-secondary" @click="logout">
+        <button v-if="showLogout" class="btn-secondary btn-logout" @click="logout">
           ログアウト
         </button>
       </div>
@@ -97,6 +97,17 @@ const logout = () => {
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-weight: 500;
+}
+
+.btn-logout {
+  background-color: #c0392b;
+  border: 1px solid #c0392b;
+  color: #ffffff;
+}
+
+.btn-logout:hover {
+  background-color: #a93226;
+  border-color: #a93226;
 }
 
 @media (max-width: 980px) {

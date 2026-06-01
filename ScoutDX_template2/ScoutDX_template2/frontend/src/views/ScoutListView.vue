@@ -1,6 +1,6 @@
 <template>
   <div class="scout-list-container">
-    <AppHeader :tabs="['スカウト文作成', 'スカウト文一覧']" active-tab="スカウト文一覧" @tab-change="handleTabChange" />
+    <AppHeader :tabs="['スカウト文作成', 'スカウト文一覧']" active-tab="スカウト文一覧" :show-logout="true" @tab-change="handleTabChange" />
     
     <div class="content">
       <h1 class="page-title">スカウト文一覧</h1>
@@ -41,7 +41,6 @@
             <button class="btn-clear" @click="clearFilters">クリア</button>
           </div>
         </div>
-        <button @click="goToCreate" class="btn-create">スカウト文作成</button>
       </div>
 
       <ScoutTable
@@ -97,9 +96,31 @@ const columns = [
   { key: 'status', label: 'ステータス' }
 ]
 
+const formatJstDateTimeHM = (value: string) => {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+
+  return new Intl.DateTimeFormat('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).format(date)
+}
+
+const mapDisplayDate = (items: any[]) =>
+  items.map((item: any) => ({
+    ...item,
+    createdAt: formatJstDateTimeHM(String(item.createdAt || ''))
+  }))
+
 onMounted(async () => {
   allScouts.value = await scoutStore.fetchScoutList()
-  scoutList.value = [...allScouts.value]
+  scoutList.value = mapDisplayDate([...allScouts.value])
 })
 
 const toggleFilterPanel = () => {
@@ -107,19 +128,21 @@ const toggleFilterPanel = () => {
 }
 
 const applyFilters = () => {
-  scoutList.value = allScouts.value.filter((item: any) => {
+  const filtered = allScouts.value.filter((item: any) => {
     const statusMatched = !filters.value.status || item.status === filters.value.status
     const positionMatched = !filters.value.recruitmentPosition || item.recruitmentPosition === filters.value.recruitmentPosition
     const companyMatched = !filters.value.companyName || item.companyName === filters.value.companyName
     return statusMatched && positionMatched && companyMatched
   })
+
+  scoutList.value = mapDisplayDate(filtered)
 }
 
 const clearFilters = () => {
   filters.value.status = ''
   filters.value.recruitmentPosition = ''
   filters.value.companyName = ''
-  scoutList.value = [...allScouts.value]
+  scoutList.value = mapDisplayDate([...allScouts.value])
 }
 
 // タブ切り替え
@@ -129,12 +152,6 @@ const handleTabChange = (tab: string) => {
   } else if (tab === 'スカウト文一覧') {
     router.push('/scout-list')
   }
-}
-
-// スカウト文作成ボタン
-const goToCreate = () => {
-  console.log('📝 スカウト文作成ページへ遷移')
-  router.push('/scout-create')
 }
 
 const handleEdit = (id: number) => {
@@ -243,24 +260,5 @@ const handleDelete = async (id: number) => {
 
 .btn-filter:hover {
   background-color: #f0f0f0;
-}
-
-.btn-create {
-  padding: 0.75rem 2rem;
-  background-color: #0066cc;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-create:hover {
-  background-color: #0052a3;
-}
-
-.btn-create:active {
-  transform: scale(0.98);
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <div class="approval-container">
-    <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" @tab-change="handleTabChange" />
+    <AppHeader :tabs="['スカウト文一覧']" active-tab="スカウト文一覧" :show-logout="true" @tab-change="handleTabChange" />
 
     <div class="leader-banner">
       <span class="leader-badge">👔 営業リーダー承認</span>

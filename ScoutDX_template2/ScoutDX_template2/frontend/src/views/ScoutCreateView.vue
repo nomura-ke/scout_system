@@ -3,6 +3,7 @@
     <AppHeader 
       :tabs="['スカウト文作成', 'スカウト文一覧']" 
       active-tab="スカウト文作成"
+      :show-logout="true"
       @tab-change="handleTabChange"
     />
     
